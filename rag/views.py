@@ -13,7 +13,7 @@ from .services.hpa_retriever_services import build_prompt, build_rag_context, qd
 # Patient Docs RAG Services
 from .services.patient_docs_sql_ingestor import embed_doc, ingest_patient_food_intake_doc
 from .services.patient_docs_retriever import get_patient_food_intake, vector_search_patient_docs_chinese, vector_search_patient_docs_english, build_prompt_for_patient_docs, vector_search_patient_docs
-from .services.generator import ask_groq_llm_with_token_limit, ask_ollama_llm, ask_groq_llm
+from .services.generator import ask_groq_llm_with_token_limit, ask_ollama_llm, ask_llm
 
 from qdrant_client.models import PointStruct
 from qdrant_client import QdrantClient
@@ -57,7 +57,6 @@ class CombinedRAGView(APIView):
 Use the provided context only when appropriate.
 
 相關資訊：
-
 Patient context":
 {patient_docs_context}
 
@@ -75,7 +74,7 @@ Dietary guidelines context:
 """
 
             # 4. Pass context
-            answer = ask_groq_llm(prompt)
+            answer = ask_llm(prompt)
 
             return Response( {
                 "response": answer,
@@ -113,7 +112,7 @@ class HpaDocsRetrievalRagQueryView(APIView):
             prompt = build_prompt(query, context)
 
             # 4. Pass context
-            answer = ask_groq_llm(prompt)
+            answer = ask_llm(prompt)
             return Response( {
                 "response": answer,
                 "retrieved_chunks_and_scores": chunks 
@@ -174,7 +173,7 @@ class PatientDocsRagQueryView(APIView):
 """
 
             # 4. Pass context
-            answer = ask_groq_llm(prompt)
+            answer = ask_llm(prompt)
 
             return Response( {
                 "gen_response": answer,
@@ -237,7 +236,7 @@ class PatientDocsEnglishRagQueryView(APIView):
 """
 
             # 4. Pass context
-            answer = ask_groq_llm(prompt)
+            answer = ask_llm(prompt)
 
             return Response( {
                 "gen_response": answer,
@@ -408,8 +407,8 @@ class PatientFoodIntakeSummaryView(APIView):
             )
 
             # Pass context
-            # response = ask_groq_llm_with_token_limit(prompt, token_limit=200)
-            response = ask_groq_llm(prompt)
+            # response = ask_llm_with_token_limit(prompt, token_limit=200)
+            response = ask_ollama_llm(prompt)
             # response = ask_ollama_llm(prompt)
             return Response(
                 {
