@@ -77,7 +77,6 @@ with open(os.path.join(META_DIR, "text_only_chunks.json"), "r", encoding="utf-8"
 # 3.1. Semantic Search; Cosine Similarity Search in Qdrant Collection
 
 def qdrant_search(collection_name, query_text, top_k=5, query_filter=None):
-
     # Encode/embed query 
     query_vector = model.encode( query_text, normalize_embeddings=True ).astype("float32").tolist()
 
@@ -123,7 +122,6 @@ def tfidf_search(vectorizer, tfidf_matrix, meta, query, top_k=5):
 #==============================================
 # 4. Scoring and Hybrid Retrieval
 #==============================================
-
 # 4.1. Score Normalization
 def normalize_scores(results, key):
     scores = [r[key] for r in results if key in r]
@@ -211,7 +209,7 @@ def retrieve_text(query, top_k=5):
 
     # Combine scores
     for r in results:
-        r["score"] = 0.8 * r["semantic_score"] + 0.4 * r["lexical_score"]
+        r["score"] = 0.6 * r["semantic_score"] + 0.4 * r["lexical_score"]
 
     results.sort(key=lambda x: x["score"], reverse=True)
     return results[:top_k]

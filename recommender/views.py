@@ -20,7 +20,7 @@ from rag.services.hpa_retriever_services import build_prompt, build_rag_context,
 # Patient Docs RAG Services
 from rag.services.patient_docs_sql_ingestor import embed_doc, ingest_patient_food_intake_doc
 from rag.services.patient_docs_retriever import get_patient_dietary_targets, get_patient_food_intake, vector_search_patient_docs_chinese, vector_search_patient_docs_english, build_prompt_for_patient_docs, vector_search_patient_docs
-from rag.services.generator import ask_groq_llm_with_token_limit, ask_ollama_llm, ask_groq_llm
+from rag.services.generator import ask_groq_llm_with_token_limit, ask_ollama_llm, ask_llm
 
 from qdrant_client.models import PointStruct
 from qdrant_client import QdrantClient
@@ -119,8 +119,8 @@ Micronutrients:
 """
 
             # Pass context
-            # response = ask_groq_llm_with_token_limit(prompt, token_limit=200)
-            response = ask_groq_llm(prompt)
+            # response = ask_llm_with_token_limit(prompt, token_limit=200)
+            response = ask_ollama_llm(prompt)
             # response = ask_ollama_llm(prompt)
             return Response(
                 {
@@ -268,8 +268,8 @@ Micronutrients:
 """
 
             # Pass context
-            # response = ask_groq_llm_with_token_limit(prompt, token_limit=200)
-            response = ask_groq_llm(prompt)
+            # response = ask_llm_with_token_limit(prompt, token_limit=200)
+            response = ask_llm(prompt)
             # response = ask_ollama_llm(prompt)
             return Response(
                 {
@@ -302,7 +302,6 @@ class MonthlyPatientFoodIntakeRecommenderView(APIView):
             patient_id = patient.get("id")
             room_number = patient.get("room_number")
             bed_number = patient.get("bed_number") 
-            sex = "男" if patient.get("sex") == "male" else "女"
 
             # Current date, month, year
             curmonth = datetime.now(ZoneInfo("Asia/Taipei")).strftime("%m")
@@ -323,12 +322,12 @@ class MonthlyPatientFoodIntakeRecommenderView(APIView):
 
             # Hpa context
             hpa_macros_query = f"""
-高齡{patient.get("age")}歲的{sex}長者的巨量營養素攝取建議，包括脂質、蛋白質與碳水化合物的營養需求。
+高齡{patient.get("age")}歲的{patient.get("sex")}長者的巨量營養素攝取建議，包括脂質、蛋白質與碳水化合物的營養需求。
 """
             hpa_macros_results = retrieve_all(hpa_macros_query, top_k=7)
 
             hpa_micros_query = f"""
-高齡{patient.get("age")}歲的{sex}長者的微量營養素攝取建議，包括維生素與礦物質的營養需求。
+高齡{patient.get("age")}歲的{patient.get("sex")}長者的微量營養素攝取建議，包括維生素與礦物質的營養需求。
 """
             hpa_micros_results = retrieve_all(hpa_micros_query, top_k=7)
 
@@ -384,8 +383,8 @@ Micronutrients:
 """
 
             # Pass context
-            # response = ask_groq_llm_with_token_limit(prompt, token_limit=200)
-            response = ask_groq_llm(prompt)
+            # response = ask_llm_with_token_limit(prompt, token_limit=200)
+            response = ask_llm(prompt)
             # response = ask_ollama_llm(prompt)
             return Response(
                 {
@@ -478,8 +477,8 @@ Micronutrients:
 """
 
             # Pass context
-            # response = ask_groq_llm_with_token_limit(prompt, token_limit=200)
-            response = ask_groq_llm(prompt)
+            # response = ask_llm_with_token_limit(prompt, token_limit=200)
+            response = ask_llm(prompt)
             # response = ask_ollama_llm(prompt)
             return Response(
                 {
@@ -504,17 +503,7 @@ Micronutrients:
 
 
 
-
-
-
 # - Frame all recommendations so that they can be applied by the caregiver in the LTC facility.
-
-
-
-
-
-
-
 def get_current_month():
     """Return the current month as an integer (1–12)."""
     return datetime.now(ZoneInfo("Asia/Taipei")).month
@@ -588,10 +577,6 @@ def create_monthly_food_intake_context(fi_results_in_curmonth_list, date_format=
     return "\n\n".join(monthly_context)
 
 
-
-
-
-
 # Get patient info 
 def get_patient_info(patient):
     patient_sex = patient.get("sex")
@@ -607,8 +592,6 @@ def get_patient_info(patient):
     )
 
     return patient_info
-
-
 
 def format_food_intakes_chunks(results):
     return [
