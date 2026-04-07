@@ -12,8 +12,8 @@ from .services.hpa_retriever_services import build_prompt, build_rag_context, qd
 
 # Patient Docs RAG Services
 from .services.patient_docs_sql_ingestor import embed_doc, ingest_patient_food_intake_doc
-from .services.patient_docs_retriever import get_patient_food_intake, vector_search_patient_docs_chinese, vector_search_patient_docs_english, build_prompt_for_patient_docs, vector_search_patient_docs
-from .services.generator import ask_groq_llm_with_token_limit, ask_ollama_llm, ask_llm
+from .services.patient_docs_retriever import get_patient_food_intake, get_patient_segmented_intake, vector_search_patient_docs_chinese, vector_search_patient_docs_english, build_prompt_for_patient_docs, vector_search_patient_docs
+from .services.generator import ask_llm
 
 from qdrant_client.models import PointStruct
 from qdrant_client import QdrantClient
@@ -275,15 +275,40 @@ class Receive5090PayloadView(APIView):
             embedded_doc = embed_doc(page_content)
 
             # 2. Create a deterministic ID (so updates overwrite the old vector)
-            doc_type = metadata.get("doc_type", "unknown")
-            room = metadata.get("room_number", "0")
-            bed = metadata.get("bed_number", "0")
-            date_str = metadata.get("date", "")
-            phase = metadata.get("meal_phase", "")
+
+            # doc_type = metadata.get("doc_type", "unknown")
+            # room = metadata.get("room_number", "0")
+            # bed = metadata.get("bed_number", "0")
+            # date_str = metadata.get("date", "")
+            # phase = metadata.get("meal_phase", "")
             
-            unique_string = f"{doc_type}_{room}_{bed}_{date_str}_{phase}"
-            # Generate consistent UUID based on the unique string
-            point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, unique_string))
+            # unique_string = f"{doc_type}_{room}_{bed}_{date_str}_{phase}"
+            # # Generate consistent UUID based on the unique string
+            # point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, unique_string))
+
+
+            # NEW ID generation logic based on doc_type
+            # 1 => intake_event
+            # 2 => patient_profile
+            # 3 => dietary_target
+            # 4 => segmented_intake
+            doc_type = metadata.get("doc_type", "unknown")
+
+            if doc_type == "patient_profile":
+                point_id = int(f"2{metadata.get('ltc_patient_id')}")
+
+            elif doc_type == "dietary_target":
+                point_id = int(f"3{metadata.get('ltc_patient_id')}")
+
+            elif doc_type == "intake_event":
+                point_id = int(f"1{metadata.get('intake_id')}")
+
+            elif doc_type == "segmented_intake":
+                point_id = int(f"4{metadata.get('estimation_id')}")
+
+            else:
+                import uuid
+                point_id = uuid.uuid4().int >> 64  # fallback integer
 
             # 3. Save to a NEW isolated Qdrant collection
             point = PointStruct(
@@ -324,15 +349,39 @@ class Receive5090PayloadChineseDocsView(APIView):
             embedded_doc = embed_doc(page_content)
 
             # 2. Create a deterministic ID (so updates overwrite the old vector)
+
+            # doc_type = metadata.get("doc_type", "unknown")
+            # room = metadata.get("room_number", "0")
+            # bed = metadata.get("bed_number", "0")
+            # date_str = metadata.get("date", "")
+            # phase = metadata.get("meal_phase", "")
+            # unique_string = f"{doc_type}_{room}_{bed}_{date_str}_{phase}"
+            # # Generate consistent UUID based on the unique string
+            # point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, unique_string))
+
+
+            # NEW ID generation logic based on doc_type
+            # 1 => intake_event
+            # 2 => patient_profile
+            # 3 => dietary_target
+            # 4 => segmented_intake
             doc_type = metadata.get("doc_type", "unknown")
-            room = metadata.get("room_number", "0")
-            bed = metadata.get("bed_number", "0")
-            date_str = metadata.get("date", "")
-            phase = metadata.get("meal_phase", "")
-            
-            unique_string = f"{doc_type}_{room}_{bed}_{date_str}_{phase}"
-            # Generate consistent UUID based on the unique string
-            point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, unique_string))
+
+            if doc_type == "patient_profile":
+                point_id = int(f"2{metadata.get('ltc_patient_id')}")
+
+            elif doc_type == "dietary_target":
+                point_id = int(f"3{metadata.get('ltc_patient_id')}")
+
+            elif doc_type == "intake_event":
+                point_id = int(f"1{metadata.get('intake_id')}")
+
+            elif doc_type == "segmented_intake":
+                point_id = int(f"4{metadata.get('estimation_id')}")
+
+            else:
+                import uuid
+                point_id = uuid.uuid4().int >> 64  # fallback integer
 
             # 3. Save to a NEW isolated Qdrant collection
             point = PointStruct(
@@ -365,23 +414,12 @@ class PatientFoodIntakeSummaryView(APIView):
             patient_id = patient.get("id")
             room_number = patient.get("room_number")
             bed_number = patient.get("bed_number") 
-            curdate = datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y-%m-%d")
+            curdate = datetime.now().strftime("%Y-%m-%d")
+            # curdate = datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y-%m-%d")
 
             # Get relevant docs
-            query = f"Food intake records of LTC patient in room {room_number} bed {bed_number} on this date {curdate}"
-            results = vector_search_patient_docs(query, patient_id, top_k=5)
-            food_intake_res = get_patient_food_intake(patient_id, curdate,)
+            food_intake_res = get_patient_segmented_intake(patient_id, curdate,)
             
-            chunks = [
-                {
-                    "result": i + 1,
-                    "score": score,
-                    "chunk": doc,
-                    "metadata": metadata
-                }
-                for i, (doc, metadata, score) in enumerate(results)
-            ]
-
             food_intake_chunks = [
                 {
                     "result": i + 1,
@@ -392,8 +430,7 @@ class PatientFoodIntakeSummaryView(APIView):
             ]
 
             # Build context 
-            context = "\n\n- ".join([doc for doc, metadata, score in results])
-            food_intake_context = "\n\n- ".join([doc for doc, metadata in food_intake_res])
+            food_intake_context = "\n\n - ".join([doc for doc, metadata in food_intake_res])
 
             # Build prompt
             prompt = (
@@ -401,20 +438,20 @@ class PatientFoodIntakeSummaryView(APIView):
                 f"相關資訊："
                 f"\nFood intakes for today:\n{food_intake_context}"
                 f"\n回應規則："
-                f"-  If no meal records exist for {curdate}, politely state the patient has no intake records for today."
-                f"- 請言簡意賅。回覆字數應少於200個字。"
+                f"- If no meal records exist for {curdate}, politely state the patient has no intake records for today."
+                f"- If there is an existing meal record, calculate the total intake in g and ml, at the end of the summary."
+                f"- 請言簡意賅。回覆字數應少於210個字。"
                 f"- 請僅以繁體中文回覆。"
             )
 
-            # Pass context
-            # response = ask_llm_with_token_limit(prompt, token_limit=200)
-            response = ask_ollama_llm(prompt)
-            # response = ask_ollama_llm(prompt)
+            # Pass context to LLM
+            response = ask_llm(prompt)
+
             return Response(
                 {
                     "response": response,
+                    "final_prompt": prompt,
                     "food_intake_chunks": food_intake_chunks,
-                    "retrieved_chunks": chunks,
                     "date": curdate
                 },
                 status=status.HTTP_200_OK

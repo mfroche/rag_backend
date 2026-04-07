@@ -21,12 +21,14 @@
 #  II. Retriever
 # Given a prompt/query, retrieve relevant documents from vector database to build context for LLM.
 # - services/patient_docs_retriever.py
-# 1. Create prompt/query (based on exact datetime; categorized into (1) "recent"/Today, (2) Past week/past 7 days/past 6-2 day, (3) Past month/past 30 days
+# 1. Create prompt/query (based on exact datetime; categorized into (1) "recent"/Today, (2) Past week/past 7 days/past 6-2 day, (3) Past month
 # - for Patient DRIs
 # - for Patient Food Intake Records
 # 2. Embed prompt/query
 # 3. Using embedded prompt/query, retrieve relevant documents from vector database
 # 4. Use retrieved documents to build context for LLM
+
+
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
 from sentence_transformers import SentenceTransformer
@@ -39,8 +41,6 @@ EMBEDDING_MODEL = SentenceTransformer('sentence-transformers/paraphrase-multilin
 # =======================================
 # Vector Search by Cosine Similarity
 # =======================================
-
-
 # English
 def vector_search_patient_docs_english(query, top_k=5):
     # Qdrant Collection
@@ -77,7 +77,7 @@ def vector_search_patient_docs_chinese(query, top_k=5):
     return [(hit.payload["page_content"], hit.payload["metadata"], hit.score) for hit in results.points]
 
 
-# English
+# Query & Filter by patient ID (pid)
 def vector_search_patient_docs(query, pid, top_k=5):
     # Qdrant Collection
     COLLECTION_NAME = "ltc_semantic_graph" 
@@ -96,6 +96,44 @@ def vector_search_patient_docs(query, pid, top_k=5):
     return [(hit.payload["page_content"], hit.payload["metadata"], hit.score) for hit in results.points]
 
 
+def get_patient_profile(pid):
+    COLLECTION_NAME = "ltc_semantic_graph"
+
+    results, _ = qd_client.scroll(
+        collection_name=COLLECTION_NAME,
+        scroll_filter=Filter(
+            must=[
+                FieldCondition(key="metadata.doc_type", match=MatchValue(value="patient_profile")),
+                FieldCondition(key="metadata.ltc_patient_id", match=MatchValue(value=pid)),
+            ]
+        ),
+        limit=3
+    )
+
+    return [
+        (point.payload["page_content"])
+        for point in results
+    ]
+
+def get_patient_profile_by_room_and_bed(room_number, bed_number):
+    COLLECTION_NAME = "ltc_semantic_graph"
+
+    results, _ = qd_client.scroll(
+        collection_name=COLLECTION_NAME,
+        scroll_filter=Filter(
+            must=[
+                FieldCondition(key="metadata.doc_type", match=MatchValue(value="patient_profile")),
+                FieldCondition(key="metadata.room_number", match=MatchValue(value=room_number)),
+                FieldCondition(key="metadata.bed_number", match=MatchValue(value=bed_number)),
+            ]
+        ),
+        limit=3
+    )
+
+    return [
+        (point.payload["page_content"])
+        for point in results
+    ]
 
 def get_patient_dietary_targets(pid):
     COLLECTION_NAME = "ltc_semantic_graph"
@@ -107,7 +145,7 @@ def get_patient_dietary_targets(pid):
     )
 
     return [
-        (point.payload["page_content"], point.payload["metadata"])
+        (point.payload["page_content"])
         for point in results
     ]
 
@@ -138,67 +176,35 @@ def get_patient_food_intake(pid, dts, limit_per_scroll=10):
         for point in all_results
     ]
 
-# ==================================
-# Build Prompt
-# ==================================
-def build_prompt_for_patient_docs(query, context):
-    # Extract filenames from the context (assumes filenames are included in the context as part of the formatted data)
-    sources = []
-    
-    # Create the formatted prompt
-    return f"""
-你是一個營養助理，請**只能根據下列資料**回答問題。
 
-相關資料:
-{context}
+def get_patient_segmented_intake(pid, dts, limit_per_scroll=10):
+    COLLECTION_NAME = "ltc_semantic_graph"
+    all_results = []
 
-使用者問題:
-{query}
+    # Initial scroll
+    scroll_result, _ = qd_client.scroll(
+        collection_name=COLLECTION_NAME,
+        scroll_filter=si_flt(pid, dts),
+        limit=limit_per_scroll
+    )
+    all_results.extend(scroll_result)
 
-回答規則:
-- 只能使用「相關資料」中的內容
-- 不可自行推論或補充
-- 若資料中沒有明確答案，請回答「無資料」
-"""
+    # Keep scrolling until no more results
+    while len(scroll_result) == limit_per_scroll:
+        scroll_result, _ = qd_client.scroll(
+            collection_name=COLLECTION_NAME,
+            scroll_filter=si_flt(pid, dts),
+            limit=limit_per_scroll
+        )
+        all_results.extend(scroll_result)
 
-
-
-
-
-
+    return [
+        (point.payload.get("page_content"), point.payload.get("metadata"))
+        for point in all_results
+    ]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# === Filters ===
 def flt(pid):
     flt = Filter(
         must=[
@@ -206,7 +212,6 @@ def flt(pid):
             FieldCondition(key="metadata.ltc_patient_id", match=MatchValue(value=pid)),
         ]
     )
-
     return flt
 
 
@@ -242,3 +247,61 @@ def bd_flt(pid, date_str: str):
             ),
         ]
     )
+
+
+def si_flt(pid, date_str: str):
+    return Filter(
+        must=[
+            FieldCondition(
+                key="metadata.doc_type",
+                match=MatchValue(value="segmented_intake")
+            ),
+            FieldCondition(
+                key="metadata.ltc_patient_id",
+                match=MatchValue(value=pid)
+            ),
+            FieldCondition(
+                key="metadata.date",
+                match=MatchValue(value=date_str)
+            ),
+        ]
+    )
+
+
+# ==================================
+# Build Prompt
+# ==================================
+
+# FORMAT DOCUMENTS INTO CONTEXT
+def format_food_intakes_docs(food_intake_res):
+    return [
+        {
+            "result": i + 1,
+            "document": doc,
+            "metadata": metadata
+        }
+        for i, (doc, metadata) in enumerate(food_intake_res)
+    ]
+
+# BUILD PROMPT
+def build_prompt_for_patient_docs(query, context):
+    # Extract filenames from the context (assumes filenames are included in the context as part of the formatted data)
+    sources = []
+    
+    # Create the formatted prompt
+    return f"""
+你是一個營養助理，請**只能根據下列資料**回答問題。
+
+相關資料:
+{context}
+
+使用者問題:
+{query}
+
+回答規則:
+- 只能使用「相關資料」中的內容
+- 不可自行推論或補充
+- 若資料中沒有明確答案，請回答「無資料」
+"""
+
+

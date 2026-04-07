@@ -171,11 +171,9 @@ def retrieve_all(query, top_k=5):
             r["lexical_score"] = lexical_dict.get(r["text"], 0.0)
             results.append(r)
 
-    # Normalize globally
     results = normalize_scores(results, "semantic_score")
     results = normalize_scores(results, "lexical_score")
 
-    # Combine scores
     for r in results:
         r["score"] = 0.6 * r["semantic_score"] + 0.4 * r["lexical_score"]
 
@@ -220,29 +218,13 @@ def build_rag_context(chunks):
     context_blocks = []
 
     for i, c in enumerate(chunks, 1):
-        meta = c["metadata"]
-
-        # final_score = c.get("score", 0.0)
-        # semantic_score = c.get("semantic_score", 0.0)
-        # lexical_score = c.get("lexical_score", 0.0)
-
-        filename = meta.get("filename", "未知")
-        page = meta.get("page", "未知")
-        doc_type = meta.get("doc_type", "未知")
-
-        header = f"""】
-來源類型: {c.get("source", "未知")}
-檔案: {filename}  
-頁數: {page}  
-文件類型: {doc_type}  
-"""
+        header = f"""【Result {i}】(Source: {c['metadata'].get('filename', 'Unknown')})\n"""
 
         body = c["text"].strip()
 
         context_blocks.append(header + body)
 
     return "\n\n".join(context_blocks)
-
 
 
 #==============================================
