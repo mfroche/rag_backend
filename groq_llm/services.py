@@ -14,7 +14,7 @@ def ask_groq_llm(prompt: str):
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
     response = client.chat.completions.create(
-        model="qwen/qwen3-32b",
+        model=  "llama-3.3-70b-versatile", # "qwen/qwen3-32b"
         messages=[
             {"role": "system", "content": "你是一個專業營養助理。"},
             {"role": "user", "content": prompt}

@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 import requests
 import re
 
+from rag.services.generator import ask_llm
 from rag.services.patient_docs_retriever import get_patient_food_intake
 
 
@@ -104,9 +105,20 @@ def create_monthly_food_intake_context(fi_results_in_curmonth_list, date_format=
 def calculate_food_item_intake(food_intake_docs, debug=False):
     """
     Calculate food intake per item in volume (mL) based on before and after meal data. 
+    Aggregate calculated food volume intake per item.
     """
 
     # 1. Organize food intake ,first, by meal_time (lunch/dinner) and ,second, by meal_phase (before/after)
+    # {'lunch': { 
+    #              'before': {'broccoli': 24.305, 'chicken': 29.2051, 'rice': 319.5655}, 
+    #              'after': {'cabbage': 30.4233, 'chicken': 36.1196, 'rice': 289.3211}
+    #          },
+    # 'dinner': { 
+    #              'before': {'broccoli': 24.305, 'chicken': 29.2051, 'rice': 319.5655}, 
+    #              'after': {'cabbage': 30.4233, 'chicken': 36.1196, 'rice': 289.3211}
+    #          }
+    # }
+
     meals = {} 
 
     for doc in food_intake_docs:
@@ -138,6 +150,9 @@ def calculate_food_item_intake(food_intake_docs, debug=False):
 
 
     # 2. Compute intake per food item (before - after)
+    # By meal: {'dinner': {'broccoli': 24.305, 'rice': 30.244399999999985, 'chicken': 0}}
+    # Aggregated total intake: {'broccoli': 24.305, 'rice': 30.244399999999985, 'chicken': 0}
+    
     by_meal_result = {}
     total_intake = {}
 
@@ -172,6 +187,7 @@ def calculate_food_item_intake(food_intake_docs, debug=False):
 
             # Prevent negative intake (optional safety)
             intake = max(intake, 0)
+
             meal_result[food] = intake
 
             # Aggregate total intake across meals
@@ -186,15 +202,31 @@ def calculate_food_item_intake(food_intake_docs, debug=False):
 
 
     # 3. Format total intake per food item across all meals
+    # {'by_meal': 
+    #     {
+    #         'dinner': {'broccoli': 24.305, 'rice': 30.244399999999985, 'chicken': 0}
+    #     }, 
+    # 'aggregated_total': 
+    #     {
+    #         'broccoli': 24.3, 'rice': 30.2, 'chicken': 0
+    #     }
+    # }
+
     total_result = {
         food: round(volume_ml, 1) 
         for food, volume_ml in total_intake.items()
     }
 
-    return {
+    res = {
         "by_meal": by_meal_result,
         "aggregated_total": total_result
     }
+    
+    if debug:
+        print("\n[STEP 3] Formatted Results")
+        print(res)
+
+    return res
 
 
 # FORMAT AGGREGATED TOTAL INTAKE RESULTS
@@ -203,3 +235,177 @@ def format_calculated_intakes(aggregated_total_intake):
         f"{volume} ml of {food}"
         for food, volume in aggregated_total_intake.items()
     )
+
+
+
+
+
+# ==================================
+# Get Meals from Database
+# ==================================
+import pymysql
+import pandas as pd
+from sqlalchemy import create_engine
+
+
+# Returns a list of meal names available in the meals_meal table in the food_intakes_db database.
+def get_list_of_meals():
+    # Connect to the database
+    engine = create_engine("mysql+pymysql://root:root@localhost:3306/food_intakes_db")
+
+    # Query the meals table
+    query = "SELECT * FROM meals_meal"
+
+    meals_table = pd.read_sql(query, engine)
+    meals_list = meals_table[['id', 'meal_name']].to_dict(orient='records')
+    meal_names = [meal["meal_name"] for meal in meals_list]
+
+    return meal_names
+
+
+
+# ==================================
+# Get Nutritional Content Calculation from LLM
+# ==================================
+import requests
+import json
+import re
+
+def preprocess_llm_response(raw):
+    # 1. remove markdown if any
+    raw = re.sub(r"```json|```", "", raw)
+
+    # 2. fix double braces
+    raw = raw.replace("{{", "{").replace("}}", "}")
+
+    # 3. remove trailing commas before } or ]
+    raw = re.sub(r",\s*([}\]])", r"\1", raw)
+
+    # 4. strip whitespace
+    raw = raw.strip()
+
+    return json.loads(raw)
+
+
+def get_nutritional_content_in_json(formatted_intakes):
+    # [Exception Case]  formatted_intakes == None
+    if formatted_intakes == None:
+        return {"calories_kcal": 0, "protein_g": 0, "fats_g": 0, "carbohydrates_g": 0}
+
+    prompt = f"""Calculate the total calories, protein, fats, and carbohydrates in {formatted_intakes}.
+
+Return answers ONLY in JSON in this EXACT FORMAT:
+{{
+    "calories_kcal": number,
+    "protein_g": number,
+    "fats_g": number,
+    "carbohydrates_g": number,
+}}
+"""
+
+    raw = ask_llm(prompt)
+    preprocessed_res = preprocess_llm_response(raw)
+
+    return preprocessed_res
+
+
+
+# Get nutrition remarks. (As of now, consider +1-10% of nutrient still acceptable)
+def get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient):
+    total = total_nutri_content[nutrient]
+    recommended = recommended_intakes[nutrient]
+    
+    recommended_intake_plus_ten_percent =  recommended + (recommended * 0.1)
+
+    if total == 0:
+        intake_remarks = "No intake"
+    elif total < recommended:
+        intake_remarks = "Below recommended"
+    elif total <= recommended_intake_plus_ten_percent:
+        intake_remarks = "Meets recommended"
+    else:
+        intake_remarks = "Above recommended"
+
+    return intake_remarks
+
+
+
+# ==================================
+# Meal Recommendations
+# ==================================
+nutrient_labels = {
+    "protein_g": "protein",
+    "fats_g": "fats",
+    "carbohydrates_g": "carbohydrates",
+    "calories_kcal": "calories",
+}
+
+
+
+def categorize_nutrients(nutrition_remarks):
+    deficient = []
+    excessive = []
+    normal = []
+
+    for nutrient, remark in nutrition_remarks.items():
+        if remark in ["No intake", "Below recommended"]:
+            deficient.append(nutrient)
+        elif remark == "Above recommended":
+            excessive.append(nutrient)
+        else:
+            normal.append(nutrient)
+    return deficient, excessive, normal
+
+
+
+def recommend_meals(meal_names, nutrition_remarks):
+    deficient, excessive, _ = categorize_nutrients(nutrition_remarks)
+
+    if not deficient and not excessive:
+        return "All nutrients are within recommended levels."
+
+    messages = []
+
+    # Deficient nutrients (No intake/Below recommended)
+    for nutrient in deficient:
+        readable = nutrient_labels[nutrient]
+        remark = nutrition_remarks[nutrient]
+
+        if remark == "No intake":
+            messages.append(f"Patient has no {readable} intake.")
+        else:
+            messages.append(f"{readable} is below recommended value.")
+
+    # Excess nutrients (Above recommended)
+    for nutrient in excessive:
+        readable = nutrient_labels[nutrient]
+        messages.append(f"{readable} is above recommended value and should be moderated.")
+
+    condition_text = " ".join(messages)
+    meals_text = ", ".join(meal_names)
+
+    prompt = f"""
+You are a clinical nutrition assistant.
+
+{condition_text}
+
+Here are available meals:
+{meals_text}
+
+Task:
+1. For nutrients that are below recommended or no intake:
+    - Add to response "Here are some meal recommendations high in <NUTRIENT>"
+   - Recommend meals high in those nutrients.
+2. For nutrients that are above recommended:
+    - Add to response "Here are some lighter meal options"
+   - Recommend meals low in those nutrients OR lighter options.
+
+Rules:
+- Only choose from the given meal list
+- Give 5 recommendations per nutrient
+- Keep response concise
+- Say nutrient and condition before giving meal recommendations
+"""
+
+    response = ask_llm(prompt)
+    return response

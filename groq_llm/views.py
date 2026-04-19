@@ -4,7 +4,7 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .services.groq_services import ask_groq_llm
+from .services import ask_groq_llm
 
 
 

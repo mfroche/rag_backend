@@ -288,23 +288,23 @@ class Receive5090PayloadView(APIView):
 
 
             # NEW ID generation logic based on doc_type
-            # 1 => intake_event
-            # 2 => patient_profile
-            # 3 => dietary_target
-            # 4 => segmented_intake
+            # 1000 => intake_event
+            # 2000 => patient_profile
+            # 3000 => dietary_target
+            # 4000 => segmented_intake
             doc_type = metadata.get("doc_type", "unknown")
 
             if doc_type == "patient_profile":
-                point_id = int(f"2{metadata.get('ltc_patient_id')}")
+                point_id = int(f"2000{metadata.get('ltc_patient_id')}")
 
             elif doc_type == "dietary_target":
-                point_id = int(f"3{metadata.get('ltc_patient_id')}")
+                point_id = int(f"3000{metadata.get('ltc_patient_id')}")
 
             elif doc_type == "intake_event":
-                point_id = int(f"1{metadata.get('intake_id')}")
+                point_id = int(f"1000  {metadata.get('intake_id')}")
 
             elif doc_type == "segmented_intake":
-                point_id = int(f"4{metadata.get('estimation_id')}")
+                point_id = int(f"4000{metadata.get('estimation_id')}")
 
             else:
                 import uuid
@@ -361,23 +361,23 @@ class Receive5090PayloadChineseDocsView(APIView):
 
 
             # NEW ID generation logic based on doc_type
-            # 1 => intake_event
-            # 2 => patient_profile
-            # 3 => dietary_target
-            # 4 => segmented_intake
+            # 1000 => intake_event
+            # 2000 => patient_profile
+            # 3000 => dietary_target
+            # 4000 => segmented_intake
             doc_type = metadata.get("doc_type", "unknown")
 
             if doc_type == "patient_profile":
-                point_id = int(f"2{metadata.get('ltc_patient_id')}")
+                point_id = int(f"2000{metadata.get('ltc_patient_id')}")
 
             elif doc_type == "dietary_target":
-                point_id = int(f"3{metadata.get('ltc_patient_id')}")
+                point_id = int(f"3000{metadata.get('ltc_patient_id')}")
 
             elif doc_type == "intake_event":
-                point_id = int(f"1{metadata.get('intake_id')}")
+                point_id = int(f"1000  {metadata.get('intake_id')}")
 
             elif doc_type == "segmented_intake":
-                point_id = int(f"4{metadata.get('estimation_id')}")
+                point_id = int(f"4000{metadata.get('estimation_id')}")
 
             else:
                 import uuid

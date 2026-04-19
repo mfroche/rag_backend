@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import PatientFoodIntakeRecommenderByDateView, DailyPatientFoodIntakeRecommenderView, WeeklyPatientFoodIntakeRecommenderView, MonthlyPatientFoodIntakeRecommenderView, GeneralPatientFoodIntakeRecommenderView
+from .views import DailyRecommenderByDummyPatientView, DailyRecommenderByPatientView, PatientFoodIntakeRecommenderByDateView, DailyPatientFoodIntakeRecommenderView, WeeklyPatientFoodIntakeRecommenderView, MonthlyPatientFoodIntakeRecommenderView, GeneralPatientFoodIntakeRecommenderView
 
 # BASE ENDPOINT: /api/recommend/
 
@@ -11,6 +11,15 @@ urlpatterns = [
     # Patient food intake recommendations By Date
     path("patient/<int:pk>/daily/<str:date>", PatientFoodIntakeRecommenderByDateView.as_view()),
     path("patient/<int:pk>/daily/<str:date>/", PatientFoodIntakeRecommenderByDateView.as_view()),
+
+    # Patient Daily Total Intake & Food Recommendations
+    path("nutri-and-food/patient/<int:pk>/daily", DailyRecommenderByPatientView.as_view()),
+    path("nutri-and-food/patient/<int:pk>/daily/", DailyRecommenderByPatientView.as_view()),
+
+    # Patient Daily Total Intake & Food Recommendations Using dummy data
+    path("nutri-and-food/patient/dummy/daily", DailyRecommenderByDummyPatientView.as_view()),
+    path("nutri-and-food/patient/dummy/daily/", DailyRecommenderByDummyPatientView.as_view()),
+
 
     # Patient Weekly food intake recommendations
     path("patient/<int:pk>/weekly", WeeklyPatientFoodIntakeRecommenderView.as_view()),
@@ -24,5 +33,8 @@ urlpatterns = [
     # General Patient recommendations for macros and micros
     path("patient/<int:pk>/general", GeneralPatientFoodIntakeRecommenderView.as_view()),
     path("patient/<int:pk>/general/", GeneralPatientFoodIntakeRecommenderView.as_view()),   
+
+
+    
 ]
 
