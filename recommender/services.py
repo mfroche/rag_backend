@@ -109,6 +109,8 @@ def calculate_food_item_intake(food_intake_docs, debug=False):
     """
 
     # 1. Organize food intake ,first, by meal_time (lunch/dinner) and ,second, by meal_phase (before/after)
+
+    # OUTPUT DATA
     # {'lunch': { 
     #              'before': {'broccoli': 24.305, 'chicken': 29.2051, 'rice': 319.5655}, 
     #              'after': {'cabbage': 30.4233, 'chicken': 36.1196, 'rice': 289.3211}
@@ -150,6 +152,8 @@ def calculate_food_item_intake(food_intake_docs, debug=False):
 
 
     # 2. Compute intake per food item (before - after)
+
+    # OUTPUT DATA
     # By meal: {'dinner': {'broccoli': 24.305, 'rice': 30.244399999999985, 'chicken': 0}}
     # Aggregated total intake: {'broccoli': 24.305, 'rice': 30.244399999999985, 'chicken': 0}
     
@@ -202,6 +206,8 @@ def calculate_food_item_intake(food_intake_docs, debug=False):
 
 
     # 3. Format total intake per food item across all meals
+
+    # OUTPUT DATA
     # {'by_meal': 
     #     {
     #         'dinner': {'broccoli': 24.305, 'rice': 30.244399999999985, 'chicken': 0}
@@ -233,6 +239,12 @@ def calculate_food_item_intake(food_intake_docs, debug=False):
 def format_calculated_intakes(aggregated_total_intake):
     return ", ".join(
         f"{volume} ml of {food}"
+        for food, volume in aggregated_total_intake.items()
+    )
+
+def format_calculated_intakes_for_response(aggregated_total_intake):
+    return ", ".join(
+        f"{food} ({volume} ml)"
         for food, volume in aggregated_total_intake.items()
     )
 
@@ -290,7 +302,7 @@ def preprocess_llm_response(raw):
 def get_nutritional_content_in_json(formatted_intakes):
     # [Exception Case]  formatted_intakes == None
     if formatted_intakes == None:
-        return {"calories_kcal": 0, "protein_g": 0, "fats_g": 0, "carbohydrates_g": 0}
+        return {"calories_kcal": 0, "protein_g": 0, "fats_g": 0, "carbohydrates_g": 0, "fiber_g": 0}
 
     prompt = f"""Calculate the total calories, protein, fats, and carbohydrates in {formatted_intakes}.
 
@@ -300,6 +312,7 @@ Return answers ONLY in JSON in this EXACT FORMAT:
     "protein_g": number,
     "fats_g": number,
     "carbohydrates_g": number,
+    "fiber_g": number,
 }}
 """
 
@@ -315,13 +328,14 @@ def get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient):
     total = total_nutri_content[nutrient]
     recommended = recommended_intakes[nutrient]
     
-    recommended_intake_plus_ten_percent =  recommended + (recommended * 0.1)
+    recommended_intake_above_allowance =  recommended + (recommended * 0.1)
+    recommended_intake_below_allowance =  recommended + (recommended * 0.03)
 
     if total == 0:
         intake_remarks = "No intake"
-    elif total < recommended:
+    elif total < recommended_intake_below_allowance:
         intake_remarks = "Below recommended"
-    elif total <= recommended_intake_plus_ten_percent:
+    elif total <= recommended_intake_above_allowance:
         intake_remarks = "Meets recommended"
     else:
         intake_remarks = "Above recommended"
@@ -334,10 +348,11 @@ def get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient):
 # Meal Recommendations
 # ==================================
 nutrient_labels = {
+    "calories_kcal": "calories",
     "protein_g": "protein",
     "fats_g": "fats",
     "carbohydrates_g": "carbohydrates",
-    "calories_kcal": "calories",
+    "fiber_g": "fiber"
 }
 
 
@@ -358,7 +373,7 @@ def categorize_nutrients(nutrition_remarks):
 
 
 
-def recommend_meals(meal_names, nutrition_remarks):
+def get_daily_meal_recommendations(meal_names, nutrition_remarks):
     deficient, excessive, _ = categorize_nutrients(nutrition_remarks)
 
     if not deficient and not excessive:
@@ -402,7 +417,57 @@ Task:
 
 Rules:
 - Only choose from the given meal list
-- Give 5 recommendations per nutrient
+- Give 5 recommendations per nutrient in the format: meal_1, meal_2, meal_3, meal_4, meal_5
+- Keep response concise
+- Say nutrient and condition before giving meal recommendations
+"""
+
+    response = ask_llm(prompt)
+    return response
+
+
+
+
+def get_weekly_meal_recommendations(meal_names, nutrition_remarks):
+    deficient, excessive, _ = categorize_nutrients(nutrition_remarks)
+
+    if not deficient and not excessive:
+        return "All nutrients are within recommended levels."
+
+    messages = []
+
+    # Deficient nutrients (Below recommended)
+    for nutrient in deficient:
+        readable = nutrient_labels[nutrient]
+        messages.append(f"{readable} is below recommended value this week.")
+
+    # Excess nutrients (Above recommended)
+    for nutrient in excessive:
+        readable = nutrient_labels[nutrient]
+        messages.append(f"{readable} is above recommended value this week and should be moderated.")
+
+    condition_text = " ".join(messages)
+    meals_text = ", ".join(meal_names)
+
+    prompt = f"""
+You are a clinical nutrition assistant.
+
+{condition_text}
+
+Here are available meals:
+{meals_text}
+
+Task:
+1. For nutrients that are below recommended or no intake:
+    - Add to response "Here are some meal recommendations high in <NUTRIENT>"
+   - Recommend meals high in those nutrients.
+2. For nutrients that are above recommended:
+    - Add to response "Here are some lighter meal options"
+   - Recommend meals low in those nutrients OR lighter options.
+
+Rules:
+- Only choose from the given meal list
+- Give 5 recommendations per nutrient in the format: meal_1, meal_2, meal_3, meal_4, meal_5
 - Keep response concise
 - Say nutrient and condition before giving meal recommendations
 """

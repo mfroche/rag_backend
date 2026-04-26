@@ -1,3 +1,5 @@
+from urllib import response
+
 from django.shortcuts import render
 
 import calendar
@@ -17,7 +19,7 @@ from rag.services.patient_docs_retriever import format_food_intakes_docs, get_pa
 from rag.services.generator import ask_llm #ask_groq_llm_with_token_limit, ask_ollama_llm, 
 
 # Recommender Services
-from recommender.services import calculate_food_item_intake, create_monthly_food_intake_context, format_calculated_intakes, get_dates_in_current_month, get_food_intake_results_in_curmonth, get_list_of_meals, get_nutrition_remarks, get_nutritional_content_in_json, get_patient_info, recommend_meals
+from recommender.services import calculate_food_item_intake, create_monthly_food_intake_context, format_calculated_intakes, format_calculated_intakes_for_response, get_dates_in_current_month, get_food_intake_results_in_curmonth, get_list_of_meals, get_nutrition_remarks, get_nutritional_content_in_json, get_patient_info, get_daily_meal_recommendations, get_weekly_meal_recommendations
 
 # Qdrant Services
 from qdrant_client.models import PointStruct, Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
@@ -203,6 +205,7 @@ class DailyRecommenderByPatientView(APIView):
                 "protein_g": lunch_nutri_content["protein_g"],
                 "fats_g": lunch_nutri_content["fats_g"],
                 "carbohydrates_g": lunch_nutri_content["carbohydrates_g"],
+                "fiber_g": lunch_nutri_content["fiber_g"],
             } 
 
                 # Dinner
@@ -212,6 +215,7 @@ class DailyRecommenderByPatientView(APIView):
                 "protein_g": dinner_nutri_content["protein_g"],
                 "fats_g": dinner_nutri_content["fats_g"],
                 "carbohydrates_g": dinner_nutri_content["carbohydrates_g"],
+                "fiber_g": lunch_nutri_content["fiber_g"],
             } 
 
                 # c. Add total nutritional content for both lunch & dinner 
@@ -220,6 +224,7 @@ class DailyRecommenderByPatientView(APIView):
                 "protein_g": lunch_nutri_content["protein_g"] + dinner_nutri_content["protein_g"],
                 "fats_g": lunch_nutri_content["fats_g"] + dinner_nutri_content["fats_g"],
                 "carbohydrates_g": lunch_nutri_content["carbohydrates_g"] + dinner_nutri_content["carbohydrates_g"],
+                "fiber_g": lunch_nutri_content["fiber_g"],
             } 
 
                 # d. Get nutritional remarks
@@ -236,7 +241,7 @@ class DailyRecommenderByPatientView(APIView):
             meal_names = get_list_of_meals()
 
                 # b. Get meal recommendations
-            meal_recos = recommend_meals(meal_names, nutrition_remarks)
+            meal_recos = get_daily_meal_recommendations(meal_names, nutrition_remarks)
 
             return Response(
                 {
@@ -266,7 +271,7 @@ class DailyRecommenderByPatientView(APIView):
         
 
 
-class DailyRecommenderByDummyPatientView(APIView):    
+class DailyRecommendationsByDummyPatientView(APIView):    
     def get(self, request):
         try:
             curdate = datetime.now().strftime("%Y-%m-%d")
@@ -297,16 +302,17 @@ class DailyRecommenderByDummyPatientView(APIView):
 
 
             # 1.4 
-                # a. In each meal time, get food intake volume per food class
-            calculated_intake = calculate_food_item_intake(food_intake_res, debug=False)
-                # Lunch 
+                # a. In each meal time (Lunch/Dinner), get food intake volume per food class
+            calculated_intake = calculate_food_item_intake(food_intake_res, debug=True)
+                # Format Lunch (e.g, 40 ml of chicken, 30 ml of broccoli, etc.)
             lunch_intakes = calculated_intake['by_meal'].get('lunch')
             formatted_lunch_intakes = format_calculated_intakes(lunch_intakes) if lunch_intakes else None
-                # Dinner
+
+                # Format Dinner
             dinner_intakes = calculated_intake['by_meal'].get('dinner')
             formatted_dinner_intakes = format_calculated_intakes(dinner_intakes) if dinner_intakes else None
 
-                # b. In each meal time, get nutritional content of food intakes
+                # b. In each meal time (Lunch/Dinner), get nutritional content of food intakes
                 # Lunch
             lunch_nutri_content = get_nutritional_content_in_json(formatted_lunch_intakes)
             lunch_nutritional_content = {
@@ -314,6 +320,7 @@ class DailyRecommenderByDummyPatientView(APIView):
                 "protein_g": lunch_nutri_content["protein_g"],
                 "fats_g": lunch_nutri_content["fats_g"],
                 "carbohydrates_g": lunch_nutri_content["carbohydrates_g"],
+                "fiber_g": lunch_nutri_content["fiber_g"],
             } 
 
                 # Dinner
@@ -323,6 +330,7 @@ class DailyRecommenderByDummyPatientView(APIView):
                 "protein_g": dinner_nutri_content["protein_g"],
                 "fats_g": dinner_nutri_content["fats_g"],
                 "carbohydrates_g": dinner_nutri_content["carbohydrates_g"],
+                "fiber_g": dinner_nutri_content["fiber_g"],
             } 
 
                 # c. Add total nutritional content for both lunch & dinner 
@@ -331,6 +339,7 @@ class DailyRecommenderByDummyPatientView(APIView):
                 "protein_g": lunch_nutri_content["protein_g"] + dinner_nutri_content["protein_g"],
                 "fats_g": lunch_nutri_content["fats_g"] + dinner_nutri_content["fats_g"],
                 "carbohydrates_g": lunch_nutri_content["carbohydrates_g"] + dinner_nutri_content["carbohydrates_g"],
+                "fiber_g": lunch_nutri_content["fiber_g"] + dinner_nutri_content["fiber_g"],
             } 
 
                 # d. Get nutritional remarks
@@ -338,6 +347,7 @@ class DailyRecommenderByDummyPatientView(APIView):
                 "protein_g": get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient = "protein_g"),
                 "fats_g": get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient = "fats_g"),
                 "carbohydrates_g": get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient = "carbohydrates_g"),
+                "fiber_g": get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient = "fiber_g"),
                 "calories_kcal": get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient = "calories_kcal"),
             }        
 
@@ -347,21 +357,201 @@ class DailyRecommenderByDummyPatientView(APIView):
             meal_names = meal_names_list
 
                 # b. Get meal recommendations
-            meal_recos = recommend_meals(meal_names, nutrition_remarks)
+            meal_recos = get_daily_meal_recommendations(meal_names, nutrition_remarks)
 
-            return Response(
-                {
+
+            # 3. SEND RESPONSE
+            response = {
                     "response": meal_recos,
                     "recommended_intakes": recommended_intakes,
+                    "lunch_intakes": lunch_intakes,
+                    "dinner_intakes": dinner_intakes,
                     "lunch_nutritional_content": lunch_nutritional_content,
                     "dinner_nutritional_content": dinner_nutritional_content,
                     "total_nutritional_content": total_nutri_content,
                     "nutrition_remarks": nutrition_remarks,
-                    "patient_profile_doc": patient_profile_doc,
-                    "dri_target_doc": dri_target_doc,
-                    "food_item_intakes": calculated_intake,
-                    "date": curdate,
+                }
+
+            return Response(
+                response,
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return Response(
+                {
+                    "detail": "Error generating response", 
+                    "error": str(e)
                 },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+
+class WeeklyRecommendationsByDummyPatientView(APIView):    
+    def get(self, request):
+        try:
+            # 1. INFORMATION RETRIEVAL
+
+            # 1.1 Get patient id
+            # patient = requests.get(f"{FOOD_INTAKE_BACKEND_URL}ltc-patients/{pk}").json()
+            # patient_id = pk
+            recommended_intakes = dummy_recommended_intakes
+            
+            # 1.2 Get last 7 days of food intake records for the patient
+            # a. Current date
+            curdate = datetime.now(ZoneInfo("Asia/Taipei")).date()
+
+            # b. Create a list of dates of the previous 7 days            
+            curdate_str      = curdate.strftime("%Y-%m-%d")
+            day_minus_1_str  = (curdate - timedelta(days=1)).strftime("%Y-%m-%d")
+            day_minus_2_str  = (curdate - timedelta(days=2)).strftime("%Y-%m-%d")
+            day_minus_3_str  = (curdate - timedelta(days=3)).strftime("%Y-%m-%d")
+            day_minus_4_str  = (curdate - timedelta(days=4)).strftime("%Y-%m-%d")
+            day_minus_5_str  = (curdate - timedelta(days=5)).strftime("%Y-%m-%d")
+            day_minus_6_str  = (curdate - timedelta(days=6)).strftime("%Y-%m-%d")
+
+            dates_list = [curdate_str, day_minus_1_str, day_minus_2_str, day_minus_3_str, day_minus_4_str, day_minus_5_str, day_minus_6_str]
+
+
+            # c. Get food intake docs (PAST 7-DAYS RECORDS)
+            # curdate_docs = get_patient_food_intake(patient_id, day_minus_5_str) or ""
+            # day_minus_1_docs = get_patient_food_intake(patient_id, day_minus_1_str) or ""
+            # day_minus_2_docs = get_patient_food_intake(patient_id, day_minus_2_str) or ""
+            # day_minus_3_docs = get_patient_food_intake(patient_id, day_minus_3_str) or ""
+            # day_minus_4_docs = get_patient_food_intake(patient_id, day_minus_4_str) or ""
+            # day_minus_5_docs = get_patient_food_intake(patient_id, day_minus_5_str) or ""
+            # day_minus_6_docs = get_patient_food_intake(patient_id, day_minus_6_str) or ""
+            curdate_docs = day_1_docs
+            day_minus_1_docs = day_2_docs
+            day_minus_2_docs = day_3_docs
+            day_minus_3_docs = day_4_docs
+            day_minus_4_docs = day_5_docs
+            day_minus_5_docs = day_6_docs
+            day_minus_6_docs = day_7_docs 
+
+            weekly_docs = [curdate_docs, day_minus_1_docs, day_minus_2_docs, day_minus_3_docs, day_minus_4_docs, day_minus_5_docs, day_minus_6_docs]
+
+            # d. Create list of docs with dates
+            weekly_food_data = []
+
+            for date, docs in zip(dates_list, weekly_docs):
+                weekly_food_data.append({
+                    "date": date,
+                    "food_intake_docs": docs
+                })
+
+
+            # 2. CALCULATE NUTRIENTS FOR EACH DAY
+            for day_data in weekly_food_data:
+                date = day_data["date"]
+                food_intake_docs = day_data["food_intake_docs"]
+
+                # a. In each meal time (Lunch/Dinner), get food intake volume per food class
+                calculated_intake = calculate_food_item_intake(food_intake_docs, debug=True)
+                    # Format Lunch (e.g, 40 ml of chicken, 30 ml of broccoli, etc.)
+                lunch_intakes = calculated_intake['by_meal'].get('lunch')
+                formatted_lunch_intakes = format_calculated_intakes(lunch_intakes) if lunch_intakes else None
+                    # Format Dinner
+                dinner_intakes = calculated_intake['by_meal'].get('dinner')
+                formatted_dinner_intakes = format_calculated_intakes(dinner_intakes) if dinner_intakes else None
+
+
+                # b. In each meal time (Lunch/Dinner), get nutritional content of food intakes
+                    # Lunch
+                lunch_nutri_content = get_nutritional_content_in_json(formatted_lunch_intakes)
+                    # Dinner
+                dinner_nutri_content = get_nutritional_content_in_json(formatted_dinner_intakes)
+
+
+                # c.  Add total nutritional content for both lunch & dinner 
+                total_nutri_content = {
+                    "calories_kcal": lunch_nutri_content["calories_kcal"] + dinner_nutri_content["calories_kcal"],
+                    "protein_g": lunch_nutri_content["protein_g"] + dinner_nutri_content["protein_g"],
+                    "fats_g": lunch_nutri_content["fats_g"] + dinner_nutri_content["fats_g"],
+                    "carbohydrates_g": lunch_nutri_content["carbohydrates_g"] + dinner_nutri_content["carbohydrates_g"],
+                    "fiber_g": lunch_nutri_content["fiber_g"] + dinner_nutri_content["fiber_g"],
+                }
+
+                # d. Append results to each day data in weekly_food_data list
+                day_data["total_nutri_content"] = total_nutri_content
+
+            
+            # 3. GET WEEKLY AVERAGE
+            # a. Get valid days with food intake records (exclude days with no records)
+            valid_days = [day_data for day_data in weekly_food_data if day_data["food_intake_docs"]]
+
+            # b. Calculate weekly average for each nutrient based on valid days
+            if valid_days:
+                weekly_average_nutri_content = {
+                    "calories_kcal": sum(day["total_nutri_content"]["calories_kcal"] for day in valid_days) / len(valid_days),
+                    "protein_g": sum(day["total_nutri_content"]["protein_g"] for day in valid_days) / len(valid_days),
+                    "fats_g": sum(day["total_nutri_content"]["fats_g"] for day in valid_days) / len(valid_days),
+                    "carbohydrates_g": sum(day["total_nutri_content"]["carbohydrates_g"] for day in valid_days) / len(valid_days),
+                    "fiber_g": sum(day["total_nutri_content"]["fiber_g"] for day in valid_days) / len(valid_days),
+                }
+            else:
+                # c. If no valid days (i.e., no food intake records), set weekly average to 0 or None
+                weekly_average_nutri_content = {
+                    "calories_kcal": 0,
+                    "protein_g": 0,
+                    "fats_g": 0,
+                    "carbohydrates_g": 0,
+                    "fiber_g": 0,
+                }
+
+            
+            # 4. GET NUTRITIONAL REMARKS BASED ON RECOMMENDED INTAKE AND WEEKLY AVERAGE INTAKE 
+            weekly_nutrition_remarks = {
+                "protein_g": get_nutrition_remarks(recommended_intakes, weekly_average_nutri_content, nutrient = "protein_g"),
+                "fats_g": get_nutrition_remarks(recommended_intakes, weekly_average_nutri_content, nutrient = "fats_g"),
+                "carbohydrates_g": get_nutrition_remarks(recommended_intakes, weekly_average_nutri_content, nutrient = "carbohydrates_g"),
+                "fiber_g": get_nutrition_remarks(recommended_intakes, weekly_average_nutri_content, nutrient = "fiber_g"),
+                "calories_kcal": get_nutrition_remarks(recommended_intakes, weekly_average_nutri_content, nutrient = "calories_kcal"),
+            }
+
+
+            # 5. GIVE WEEKLY MEAL RECOMMENDATIONS; CREATE PROMPT & GENERATE RESPONSE WITH LLM
+                # a. Get meals from database
+            meal_names = meal_names_list
+
+                # b. Get meal recommendations
+            meal_recos = get_weekly_meal_recommendations(meal_names, weekly_nutrition_remarks)
+
+            
+            # 6. FORMAT weekly_food_data FOR RESPONSE
+            formatted_weekly_data = {}
+            total_days = 7
+
+            for i, day_data in enumerate(weekly_food_data):
+                day_key = f"day_{total_days - i}"
+
+                # Check if food_intake_docs is empty string or falsy
+                if not day_data.get("food_intake_docs"):
+                    total_nutritional_content = None
+                else:
+                    total_nutritional_content = day_data.get("total_nutri_content")
+
+                formatted_weekly_data[day_key] = {
+                    "date": day_data["date"],
+                    "total_nutritional_content": total_nutritional_content
+                }
+
+
+            # 6. SEND RESPONSE
+            response = {
+                    "response": meal_recos,
+                    "recommended_intakes": recommended_intakes,
+                    "weekly_nutritional_content": formatted_weekly_data,
+                    "weekly_average_nutritional_content": weekly_average_nutri_content,
+                    "weekly_nutrition_remarks": weekly_nutrition_remarks,
+                    "valid_days_count": len(valid_days),
+                    "date": curdate,
+                }
+
+
+            
+            return Response(
+                response,
                 status=status.HTTP_200_OK
             )
 
@@ -400,6 +590,7 @@ class WeeklyPatientFoodIntakeRecommenderView(APIView):
 
 
             # Get relevant patient docs
+            #food_intakes
             curdate_results = get_patient_food_intake(patient_id, day_minus_5_str)
             day_minus_1_results = get_patient_food_intake(patient_id, day_minus_1_str)
             day_minus_2_results = get_patient_food_intake(patient_id, day_minus_2_str)
@@ -408,7 +599,10 @@ class WeeklyPatientFoodIntakeRecommenderView(APIView):
             day_minus_5_results = get_patient_food_intake(patient_id, day_minus_5_str)
             day_minus_6_results = get_patient_food_intake(patient_id, day_minus_6_str)
             
+            #dri_targets
             dri_results = get_patient_dietary_targets(patient_id,)
+
+            #patient_profile
             patient_info = get_patient_info(patient)
 
             # Hpa context
@@ -1039,9 +1233,919 @@ dummy_recommended_intakes = {
     "calories_kcal": 1956.0, 
     "protein_g": 40.7, 
     "fats_g": 59.9, 
-    "carbohydrates_g": 269.0
+    "carbohydrates_g": 269.0,
+    "fiber_g": 30.0
 }
 
 
 # From actual db
 meal_names_list = ['滷肉排', '馬鈴薯炒肉末', '蒜醬麵腸', '炒時蔬', '筍絲豆皮湯', '滷油干魚', '滷豆支', '四季豆炒香腸', '炒時蔬', '紫菜蛋花湯', '什錦烏龍麵', '炒時蔬', '大白菜豆皮湯', '高麗菜粥', '馬鈴薯燉肉', '芋頭蛋黃球', '滷蘿蔔', '炒時蔬', '味噌蛋花湯', '滷雞排', '炒冬粉', '薑絲海帶根', '炒時蔬', '玉米湯', '洋蔥炒豬柳', '燴咖哩', '炒時蔬', '海帶芽湯', '銀斑魚', '沙茶素腰花', '玉米炒蛋', '炒時蔬', '高麗菜湯', '滷雞腿', '紅蘿蔔滷貢丸', '蒜醬百頁豆腐', '炒時蔬', '紫菜蛋花湯', '紅燒獅子頭', '蘿蔔滷豆輪', '馬鈴薯炒蛋', '炒時蔬', '玉米湯', '滷肉排', '海苔丸', '醬拌豆干', '炒時蔬', '冬菜豆芽湯', '碗粿', '筍絲豆皮湯', '皮蛋鹹粥', '日式豬排', '滷麵筋', '薑絲炒木耳', '炒時蔬', '海帶芽湯', '古早味炒麵', '蘿蔔湯', '絲瓜鹹粥', '滷雞排', '紅蘿蔔炒蛋', '馬鈴薯炒肉末', '炒時蔬', '玉米湯', '滷油干魚', '肉末滷油豆腐', '茄汁炒蛋', '炒時蔬', '筍絲豆皮湯', '香腸', '炒冬粉', '馬鈴薯炒肉末', '炒時蔬', '紫菜蛋花湯', '三杯里肌', '洋蔥炒甜不辣', '紅蘿蔔炒蛋', '炒時蔬', '冬菜豆芽湯', '滷雞腿', '蘿蔔滷豆輪', '炒時蔬', '味噌蛋花湯', '什錦米粉', '炒時蔬', '大白菜豆皮湯', '芋頭鹹粥', '滷銀斑魚', '滷筍絲', '蒜醬百頁豆腐', '炒時蔬', '海帶芽湯', '沙茶腿排', '三杯麵腸', '玉米炒蛋', '炒時蔬', '鳳梨苦瓜湯', '紅燒獅子頭', '滷海帶結', '炒時蔬', '玉米湯', '馬鈴薯燉肉', '滷蘿蔔', '炒冬粉', '炒時蔬', '筍絲豆皮湯', '炸無骨雞排', '燴咖哩', '紅蘿蔔炒蛋', '炒時蔬', '紫菜湯', '米糕', '鳳梨苦瓜湯', '高麗菜鹹粥', '紅燒里肌', '醬拌豆干', '炒時蔬', '玉米湯', '雞肉飯', '筍絲豆皮湯', '絲瓜鹹粥', '滷銀斑魚', '滷豆支', '沙茶玉米炒肉末', '炒時蔬', '大白菜豆皮湯']
+
+
+day_1_docs = [
+    {
+        "result": 1,
+        "document": "During lunch (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-27",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 83,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 34.305
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 39.2051
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 319.5655
+                }
+            ]
+        }
+    },
+    {
+        "result": 2,
+        "document": "During lunch (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-27",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10.4233
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 16.1196
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 100.3211
+                }
+            ]
+        }
+    },
+    {
+        "result": 3,
+        "document": "During dinner (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-27",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 183,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 30
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 25
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 150
+                }
+            ]
+        }
+    },
+    {
+        "result": 4,
+        "document": "During dinner (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-27",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 10
+                }
+            ]
+        }
+    }
+]
+
+day_2_docs = [
+    {
+        "result": 1,
+        "document": "During lunch (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-26",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 83,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 34.305
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 39.2051
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 319.5655
+                }
+            ]
+        }
+    },
+    {
+        "result": 2,
+        "document": "During lunch (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-26",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10.4233
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 16.1196
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 100.3211
+                }
+            ]
+        }
+    },
+    {
+        "result": 3,
+        "document": "During dinner (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-26",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 183,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 30
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 25
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 150
+                }
+            ]
+        }
+    },
+    {
+        "result": 4,
+        "document": "During dinner (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-26",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 10
+                }
+            ]
+        }
+    }
+]
+
+day_3_docs = [
+    {
+        "result": 1,
+        "document": "During lunch (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-25",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 83,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 34.305
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 39.2051
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 319.5655
+                }
+            ]
+        }
+    },
+    {
+        "result": 2,
+        "document": "During lunch (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-25",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10.4233
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 16.1196
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 100.3211
+                }
+            ]
+        }
+    },
+    {
+        "result": 3,
+        "document": "During dinner (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-25",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 183,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 30
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 25
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 150
+                }
+            ]
+        }
+    },
+    {
+        "result": 4,
+        "document": "During dinner (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-25",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 10
+                }
+            ]
+        }
+    }
+]
+
+day_4_docs = [
+    {
+        "result": 1,
+        "document": "During lunch (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-24",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 83,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 34.305
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 39.2051
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 319.5655
+                }
+            ]
+        }
+    },
+    {
+        "result": 2,
+        "document": "During lunch (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-24",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10.4233
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 16.1196
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 100.3211
+                }
+            ]
+        }
+    },
+    {
+        "result": 3,
+        "document": "During dinner (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-24",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 183,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 30
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 25
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 150
+                }
+            ]
+        }
+    },
+    {
+        "result": 4,
+        "document": "During dinner (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-24",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 10
+                }
+            ]
+        }
+    }
+]
+
+day_5_docs = [
+    {
+        "result": 1,
+        "document": "During lunch (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-23",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 83,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 34.305
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 39.2051
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 319.5655
+                }
+            ]
+        }
+    },
+    {
+        "result": 2,
+        "document": "During lunch (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-23",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10.4233
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 16.1196
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 100.3211
+                }
+            ]
+        }
+    },
+    {
+        "result": 3,
+        "document": "During dinner (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-23",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 183,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 30
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 25
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 150
+                }
+            ]
+        }
+    },
+    {
+        "result": 4,
+        "document": "During dinner (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-23",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 10
+                }
+            ]
+        }
+    }
+]
+
+day_6_docs = [
+    {
+        "result": 1,
+        "document": "During lunch (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-22",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 83,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 34.305
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 39.2051
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 319.5655
+                }
+            ]
+        }
+    },
+    {
+        "result": 2,
+        "document": "During lunch (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-22",
+            "meal_time": "晚餐",
+            "meal_time_en": "lunch",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10.4233
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 16.1196
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 100.3211
+                }
+            ]
+        }
+    },
+    {
+        "result": 3,
+        "document": "During dinner (晚餐), there was a recorded BEFORE meal (Gross) intake of 378.1g and 373.0756ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 24.305 ml), chicken (volume: 29.2051 ml), rice (volume: 319.5655 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-22",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "前",
+            "meal_phase_en": "before",
+            "total_intake_weight": 378.1,
+            "total_intake_volume": 100.0,
+            "total_estimated_volume": 373.0756,
+            "ltc_patient_id": 9,
+            "intake_id": 183,
+            "estimation_id": 48,
+            "food_items": [
+                {
+                    "id": 89,
+                    "food_class": "broccoli",
+                    "volume_ml": 30
+                },
+                {
+                    "id": 90,
+                    "food_class": "chicken",
+                    "volume_ml": 25
+                },
+                {
+                    "id": 88,
+                    "food_class": "rice",
+                    "volume_ml": 150
+                }
+            ]
+        }
+    },
+    {
+        "result": 4,
+        "document": "During dinner (晚餐), there was a recorded AFTER meal (Leftover/Net) intake of 229.96g and 355.8639ml for broccoli, chicken, rice. This meal consists of food items broccoli (volume: 30.4233 ml), chicken (volume: 36.1196 ml), rice (volume: 289.3211 ml).",
+        "metadata": {
+            "doc_type": "segmented_intake",
+            "room_number": "1005",
+            "bed_number": "01",
+            "date": "2026-04-22",
+            "meal_time": "晚餐",
+            "meal_time_en": "dinner",
+            "meal_phase": "後",
+            "meal_phase_en": "after",
+            "total_intake_weight": 229.96,
+            "total_intake_volume": 39.18,
+            "total_estimated_volume": 355.8639,
+            "ltc_patient_id": 9,
+            "intake_id": 84,
+            "estimation_id": 49,
+            "food_items": [
+                {
+                    "id": 92,
+                    "food_class": "broccoli",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 93,
+                    "food_class": "chicken",
+                    "volume_ml": 10
+                },
+                {
+                    "id": 91,
+                    "food_class": "rice",
+                    "volume_ml": 10
+                }
+            ]
+        }
+    }
+]
+
+day_7_docs = ""

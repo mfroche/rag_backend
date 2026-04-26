@@ -410,15 +410,15 @@ FOOD_INTAKE_BACKEND_URL = "https://h3vkhzth-8000.asse.devtunnels.ms/api/"
 class PatientFoodIntakeSummaryView(APIView):    
     def get(self, request, pk):
         try:
-            patient = requests.get(f"{FOOD_INTAKE_BACKEND_URL}ltc-patients/{pk}").json()
-            patient_id = patient.get("id")
-            room_number = patient.get("room_number")
-            bed_number = patient.get("bed_number") 
+            # patient = requests.get(f"{FOOD_INTAKE_BACKEND_URL}ltc-patients/{pk}").json()
+            # patient_id = patient.get("id")
+            # room_number = patient.get("room_number")
+            # bed_number = patient.get("bed_number") 
             curdate = datetime.now().strftime("%Y-%m-%d")
             # curdate = datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y-%m-%d")
 
             # Get relevant docs
-            food_intake_res = get_patient_segmented_intake(patient_id, curdate,)
+            food_intake_res = get_patient_segmented_intake(str(pk), curdate,)
             
             food_intake_chunks = [
                 {
@@ -434,7 +434,8 @@ class PatientFoodIntakeSummaryView(APIView):
 
             # Build prompt
             prompt = (
-                f"根據以下資訊，請提供長期照護病患於{curdate}當日，入住{room_number}病房、{bed_number}床位的膳食攝取紀錄摘要。"
+                # f"根據以下資訊，請提供長期照護病患於{curdate}當日，入住{room_number}病房、{bed_number}床位的膳食攝取紀錄摘要。"
+                f"根據以下資訊，請提供長期照護病患於{curdate}當日的膳食攝取紀錄摘要。"
                 f"相關資訊："
                 f"\nFood intakes for today:\n{food_intake_context}"
                 f"\n回應規則："
