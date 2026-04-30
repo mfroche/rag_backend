@@ -301,7 +301,7 @@ class Receive5090PayloadView(APIView):
                 point_id = int(f"3000{metadata.get('ltc_patient_id')}")
 
             elif doc_type == "intake_event":
-                point_id = int(f"1000  {metadata.get('intake_id')}")
+                point_id = int(f"1000{metadata.get('intake_id')}")
 
             elif doc_type == "segmented_intake":
                 point_id = int(f"4000{metadata.get('estimation_id')}")
@@ -321,9 +321,11 @@ class Receive5090PayloadView(APIView):
             )
 
             qd_client.upsert(
-                collection_name="ltc_semantic_graph", 
+                collection_name="ltc_semantic_graph_2", 
                 points=[point]
             )
+
+            print(f"Upserted point with ID: {point_id} into ltc_semantic_graph 2 collection.")
 
             return Response({"status": "Successfully ingested to 5070 Qdrant", "id": point_id}, status=status.HTTP_200_OK)
 
@@ -374,7 +376,7 @@ class Receive5090PayloadChineseDocsView(APIView):
                 point_id = int(f"3000{metadata.get('ltc_patient_id')}")
 
             elif doc_type == "intake_event":
-                point_id = int(f"1000  {metadata.get('intake_id')}")
+                point_id = int(f"1000{metadata.get('intake_id')}")
 
             elif doc_type == "segmented_intake":
                 point_id = int(f"4000{metadata.get('estimation_id')}")
@@ -466,16 +468,6 @@ class PatientFoodIntakeSummaryView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-
-
-
-
-
-
-
-
 
 
 

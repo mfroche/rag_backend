@@ -22,8 +22,6 @@ def get_patient_info(patient):
         f"The LTC patient has a {patient_activity_level} physical activity level."
     )
     return patient_info
-
-
 # Dates
 def get_current_month():
     """Return the current month as an integer (1–12)."""
@@ -97,6 +95,10 @@ def create_monthly_food_intake_context(fi_results_in_curmonth_list, date_format=
     return "\n\n".join(monthly_context)
 
 
+
+# ==================================
+#
+# ==================================
 
 # ==================================
 # Food Intake Calculation
@@ -322,26 +324,33 @@ Return answers ONLY in JSON in this EXACT FORMAT:
     return preprocessed_res
 
 
+# Get patient DRIs' min and max range
+def get_dri_min_max(dri_value):   
+    min_val = round(dri_value * 0.8, 2)
+    max_val = round(dri_value * 1.2, 2)
 
-# Get nutrition remarks. (As of now, consider +1-10% of nutrient still acceptable)
+    return {
+        "min": min_val,
+        "max": max_val
+    }
+
+
+# Get nutrition remarks
 def get_nutrition_remarks(recommended_intakes, total_nutri_content, nutrient):
-    total = total_nutri_content[nutrient]
-    recommended = recommended_intakes[nutrient]
-    
-    recommended_intake_above_allowance =  recommended + (recommended * 0.1)
-    recommended_intake_below_allowance =  recommended + (recommended * 0.03)
+    total = round(total_nutri_content[nutrient], 2)
+
+    dri_range = recommended_intakes[nutrient]
+    min_val = dri_range["min"]
+    max_val = dri_range["max"]
 
     if total == 0:
-        intake_remarks = "No intake"
-    elif total < recommended_intake_below_allowance:
-        intake_remarks = "Below recommended"
-    elif total <= recommended_intake_above_allowance:
-        intake_remarks = "Meets recommended"
+        return "No intake"
+    elif total < min_val:
+        return "Below recommended"
+    elif min_val <= total <= max_val:
+        return "Meets recommended"
     else:
-        intake_remarks = "Above recommended"
-
-    return intake_remarks
-
+        return "Above recommended"
 
 
 # ==================================
@@ -417,15 +426,13 @@ Task:
 
 Rules:
 - Only choose from the given meal list
-- Give 5 recommendations per nutrient in the format: meal_1, meal_2, meal_3, meal_4, meal_5
+- Give top 5 recommendations per nutrient in the format: meal_1, meal_2, meal_3, meal_4, meal_5
 - Keep response concise
 - Say nutrient and condition before giving meal recommendations
 """
 
     response = ask_llm(prompt)
     return response
-
-
 
 
 def get_weekly_meal_recommendations(meal_names, nutrition_remarks):
@@ -436,10 +443,15 @@ def get_weekly_meal_recommendations(meal_names, nutrition_remarks):
 
     messages = []
 
-    # Deficient nutrients (Below recommended)
+    # Deficient nutrients (No intake/Below recommended)
     for nutrient in deficient:
         readable = nutrient_labels[nutrient]
-        messages.append(f"{readable} is below recommended value this week.")
+        remark = nutrition_remarks[nutrient]
+
+        if remark == "No intake":
+            messages.append(f"Patient has no {readable} intake.")
+        else:
+            messages.append(f"{readable} is below recommended value.")
 
     # Excess nutrients (Above recommended)
     for nutrient in excessive:
@@ -467,7 +479,60 @@ Task:
 
 Rules:
 - Only choose from the given meal list
-- Give 5 recommendations per nutrient in the format: meal_1, meal_2, meal_3, meal_4, meal_5
+- Give top 5 recommendations per nutrient in the format: meal_1, meal_2, meal_3, meal_4, meal_5
+- Keep response concise
+- Say nutrient and condition before giving meal recommendations
+"""
+
+    response = ask_llm(prompt)
+    return response
+
+
+def get_monthly_meal_recommendations(meal_names, nutrition_remarks):
+    deficient, excessive, _ = categorize_nutrients(nutrition_remarks)
+
+    if not deficient and not excessive:
+        return "All nutrients are within recommended levels."
+
+    messages = []
+
+    # Deficient nutrients (No intake/Below recommended)
+    for nutrient in deficient:
+        readable = nutrient_labels[nutrient]
+        remark = nutrition_remarks[nutrient]
+
+        if remark == "No intake":
+            messages.append(f"Patient has no {readable} intake.")
+        else:
+            messages.append(f"{readable} is below recommended value.")
+
+    # Excess nutrients (Above recommended)
+    for nutrient in excessive:
+        readable = nutrient_labels[nutrient]
+        messages.append(f"{readable} is above recommended value this month and should be moderated.")
+
+    condition_text = " ".join(messages)
+    meals_text = ", ".join(meal_names)
+
+    prompt = f"""
+You are a clinical nutrition assistant.
+
+{condition_text}
+
+Here are available meals:
+{meals_text}
+
+Task:
+1. For nutrients that are below recommended or no intake:
+    - Add to response "Here are some meal recommendations high in <NUTRIENT>"
+   - Recommend meals high in those nutrients.
+2. For nutrients that are above recommended:
+    - Add to response "Here are some lighter meal options"
+   - Recommend meals low in those nutrients OR lighter options.
+
+Rules:
+- Only choose from the given meal list
+- Give top 5 recommendations per nutrient in the format: meal_1, meal_2, meal_3, meal_4, meal_5
 - Keep response concise
 - Say nutrient and condition before giving meal recommendations
 """

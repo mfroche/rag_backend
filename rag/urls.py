@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import CombinedRAGView, HpaDocsRetrievalRagQueryView, PatientDocsRagQueryView, PatientDocsEnglishRagQueryView, PatientFoodIntakeSummaryView, Receive5090PayloadView, Receive5090PayloadChineseDocsView
 
-# BASE ENDPOINT: /api/
+# BASE ENDPOINT: /api/z
 
 urlpatterns = [
     # Combined RAG

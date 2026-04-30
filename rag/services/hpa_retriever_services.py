@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import torch
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 
@@ -12,9 +13,10 @@ from .tokenizers import jieba_tokenizer
 
 # 1.1. Load embedding model (SEMANTIC SEARCH)
 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+print("Using device:", DEVICE)
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-model = SentenceTransformer(MODEL_NAME, device="cpu")
-
+model = SentenceTransformer(MODEL_NAME, device=DEVICE)
 
 # 1.2. Load Vectorizer (LEXICAL SEARCH)
 

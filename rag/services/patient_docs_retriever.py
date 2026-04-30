@@ -44,7 +44,7 @@ EMBEDDING_MODEL = SentenceTransformer('sentence-transformers/paraphrase-multilin
 # English
 def vector_search_patient_docs_english(query, top_k=5):
     # Qdrant Collection
-    COLLECTION_NAME = "ltc_semantic_graph" 
+    COLLECTION_NAME = "ltc_semantic_graph_2" 
 
     # Embed the query
     q_emb = EMBEDDING_MODEL.encode(query).tolist()
@@ -80,7 +80,7 @@ def vector_search_patient_docs_chinese(query, top_k=5):
 # Query & Filter by patient ID (pid)
 def vector_search_patient_docs(query, pid, top_k=5):
     # Qdrant Collection
-    COLLECTION_NAME = "ltc_semantic_graph" 
+    COLLECTION_NAME = "ltc_semantic_graph_2" 
 
     # Embed the query
     q_emb = EMBEDDING_MODEL.encode(query).tolist()
@@ -97,7 +97,7 @@ def vector_search_patient_docs(query, pid, top_k=5):
 
 
 def get_patient_profile(pid):
-    COLLECTION_NAME = "ltc_semantic_graph"
+    COLLECTION_NAME = "ltc_semantic_graph_2"
 
     results, _ = qd_client.scroll(
         collection_name=COLLECTION_NAME,
@@ -111,12 +111,12 @@ def get_patient_profile(pid):
     )
 
     return [
-        (point.payload["page_content"])
+        (point.payload["page_content"], point.payload.get("metadata"))
         for point in results
     ]
 
 def get_patient_profile_by_room_and_bed(room_number, bed_number):
-    COLLECTION_NAME = "ltc_semantic_graph"
+    COLLECTION_NAME = "ltc_semantic_graph_2"
 
     results, _ = qd_client.scroll(
         collection_name=COLLECTION_NAME,
@@ -131,12 +131,12 @@ def get_patient_profile_by_room_and_bed(room_number, bed_number):
     )
 
     return [
-        (point.payload["page_content"])
+        (point.payload["page_content"], point.payload.get("metadata"))
         for point in results
     ]
 
 def get_patient_dietary_targets(pid):
-    COLLECTION_NAME = "ltc_semantic_graph"
+    COLLECTION_NAME = "ltc_semantic_graph_2"
 
     results, _ = qd_client.scroll(
         collection_name=COLLECTION_NAME,
@@ -145,13 +145,13 @@ def get_patient_dietary_targets(pid):
     )
 
     return [
-        (point.payload["page_content"])
+        (point.payload["page_content"], point.payload.get("metadata"))
         for point in results
     ]
 
 
 def get_patient_food_intake(pid, dts, limit_per_scroll=10):
-    COLLECTION_NAME = "ltc_semantic_graph"
+    COLLECTION_NAME = "ltc_semantic_graph_2"
     all_results = []
 
     # Initial scroll
@@ -178,7 +178,7 @@ def get_patient_food_intake(pid, dts, limit_per_scroll=10):
 
 
 def get_patient_segmented_intake(pid, dts, limit_per_scroll=10):
-    COLLECTION_NAME = "ltc_semantic_graph"
+    COLLECTION_NAME = "ltc_semantic_graph_2"
     all_results = []
 
     # Initial scroll
