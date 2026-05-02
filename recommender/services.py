@@ -264,17 +264,19 @@ from sqlalchemy import create_engine
 
 # Returns a list of meal names available in the meals_meal table in the food_intakes_db database.
 def get_list_of_meals():
-    # Connect to the database
-    engine = create_engine("mysql+pymysql://root:root@localhost:3306/food_intakes_db")
+    try:
+        engine = create_engine("mysql+pymysql://root:Root%401234@localhost:3306/food_intakes_db")
+        query = "SELECT * FROM meals_meal"
+        meals_table = pd.read_sql(query, engine)
 
-    # Query the meals table
-    query = "SELECT * FROM meals_meal"
+        meals_list = meals_table[['id', 'meal_name']].to_dict(orient='records')
+        meal_names = [meal["meal_name"] for meal in meals_list]
 
-    meals_table = pd.read_sql(query, engine)
-    meals_list = meals_table[['id', 'meal_name']].to_dict(orient='records')
-    meal_names = [meal["meal_name"] for meal in meals_list]
+        return meal_names
 
-    return meal_names
+    except Exception as e:
+        print("Error:", e)
+        return []
 
 
 

@@ -12,7 +12,7 @@ from .services.hpa_retriever_services import build_prompt, build_rag_context, qd
 
 # Patient Docs RAG Services
 from .services.patient_docs_sql_ingestor import embed_doc, ingest_patient_food_intake_doc
-from .services.patient_docs_retriever import get_patient_food_intake, get_patient_segmented_intake, vector_search_patient_docs_chinese, vector_search_patient_docs_english, build_prompt_for_patient_docs, vector_search_patient_docs
+from .services.patient_docs_retriever import get_patient_food_intake, get_patient_profile, get_patient_segmented_intake, vector_search_patient_docs_chinese, vector_search_patient_docs_english, build_prompt_for_patient_docs, vector_search_patient_docs
 from .services.generator import ask_llm
 
 from qdrant_client.models import PointStruct
@@ -412,15 +412,13 @@ FOOD_INTAKE_BACKEND_URL = "https://h3vkhzth-8000.asse.devtunnels.ms/api/"
 class PatientFoodIntakeSummaryView(APIView):    
     def get(self, request, pk):
         try:
-            # patient = requests.get(f"{FOOD_INTAKE_BACKEND_URL}ltc-patients/{pk}").json()
-            # patient_id = patient.get("id")
-            # room_number = patient.get("room_number")
-            # bed_number = patient.get("bed_number") 
-            curdate = datetime.now().strftime("%Y-%m-%d")
-            # curdate = datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y-%m-%d")
+            patient_profile= get_patient_profile(pk)
+            patient = patient_profile[0][1]
+            # curdate = datetime.now().strftime("%Y-%m-%d")
+            curdate = datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y-%m-%d")
 
             # Get relevant docs
-            food_intake_res = get_patient_segmented_intake(str(pk), curdate,)
+            food_intake_res = get_patient_food_intake(pk, curdate,)
             
             food_intake_chunks = [
                 {
@@ -432,19 +430,17 @@ class PatientFoodIntakeSummaryView(APIView):
             ]
 
             # Build context 
-            food_intake_context = "\n\n - ".join([doc for doc, metadata in food_intake_res])
+            food_intake_context = "\n\n ".join([doc for doc, metadata in food_intake_res])
 
             # Build prompt
             prompt = (
-                # f"根據以下資訊，請提供長期照護病患於{curdate}當日，入住{room_number}病房、{bed_number}床位的膳食攝取紀錄摘要。"
-                f"根據以下資訊，請提供長期照護病患於{curdate}當日的膳食攝取紀錄摘要。"
-                f"相關資訊："
-                f"\nFood intakes for today:\n{food_intake_context}"
-                f"\n回應規則："
-                f"- If no meal records exist for {curdate}, politely state the patient has no intake records for today."
-                f"- If there is an existing meal record, calculate the total intake in g and ml, at the end of the summary."
-                f"- 請言簡意賅。回覆字數應少於210個字。"
-                f"- 請僅以繁體中文回覆。"
+                f"Based on the following food intake records for {curdate}, write a brief summary for a long-term care patient."
+                f"\n\nFood intake records:\n{food_intake_context}"
+                f"\n\nRules:"
+                f"\n1. State ONLY which meals the patient had (e.g., lunch, dinner, both, or none)."
+                f"\n2. For each meal present, mention only whether a before-meal (Gross) and after-meal (Leftover/Net) record was taken. Do NOT mention any specific quantities, grams, or milliliters."
+                f"\n3. If no records exist for {curdate}, state: 'No food intake records were recorded for this date.'"
+                f"\n4. Keep the response to 2-3 sentences maximum. Answer in English."
             )
 
             # Pass context to LLM
@@ -454,8 +450,63 @@ class PatientFoodIntakeSummaryView(APIView):
                 {
                     "response": response,
                     "final_prompt": prompt,
-                    "food_intake_chunks": food_intake_chunks,
+                    "food_intake_chunks": food_intake_context,
                     "date": curdate
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return Response(
+                {
+                    "detail": "Error generating response", 
+                    "error": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class PatientFoodIntakeSummaryByDateView(APIView):    
+    def get(self, request, pk, date):
+        try:
+            patient_profile= get_patient_profile(pk)
+            patient = patient_profile[0][1]
+
+            # Get relevant docs
+            food_intake_res = get_patient_food_intake(pk, date)
+            
+            food_intake_chunks = [
+                {
+                    "result": i + 1,
+                    "chunk": doc,
+                    "metadata": metadata
+                }
+                for i, (doc, metadata) in enumerate(food_intake_res)
+            ]
+
+            # Build context 
+            food_intake_context = "\n\n ".join([doc for doc, metadata in food_intake_res])
+
+            # Build prompt
+            prompt = (
+                f"Based on the following food intake records for {date}, write a brief summary for a long-term care patient."
+                f"\n\nFood intake records:\n{food_intake_context}"
+                f"\n\nRules:"
+                f"\n1. State ONLY which meals the patient had (e.g., lunch, dinner, both, or none)."
+                f"\n2. For each meal present, mention only whether a before-meal (Gross) and after-meal (Leftover/Net) record was taken. Do NOT mention any specific quantities, grams, or milliliters."
+                f"\n3. If no records exist for {date}, state: 'No food intake records were recorded for this date.'"
+                f"\n4. Keep the response to 2-3 sentences maximum. Answer in English."
+            )
+
+            # Pass context to LLM
+            response = ask_llm(prompt)
+
+            return Response(
+                {
+                    "response": response,
+                    "final_prompt": prompt,
+                    "food_intake_chunks": food_intake_context,
+                    "food_intake_res": food_intake_res,
+                    "date": date
                 },
                 status=status.HTTP_200_OK
             )
@@ -471,9 +522,80 @@ class PatientFoodIntakeSummaryView(APIView):
 
 
 
+# For testing/debugging: Get patient food intake summary for today (without numerical values)
 
+class FoodIntakeSummaryView(APIView):    
+    def get(self, request, pk):
+        try:
+            patient_profile= get_patient_profile(pk)
+            patient = patient_profile[0][1]
+            # curdate = datetime.now().strftime("%Y-%m-%d")
+            curdate = datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y-%m-%d")
 
+            # Get relevant docs
+            food_intake_res = get_patient_food_intake(pk, curdate,)
+            
+            food_intake_chunks = [
+                {
+                    "result": i + 1,
+                    "chunk": doc,
+                    "metadata": metadata
+                }
+                for i, (doc, metadata) in enumerate(food_intake_res)
+            ]
 
+            # Build context 
+            food_intake_context = "\n\n ".join([doc for doc, metadata in food_intake_res])
+
+            # Build prompt
+            prompt = (
+                f"You are analyzing food intake records for a long-term care patient for {curdate}.\n\n"
+                
+                f"Food intake records:\n{food_intake_context}\n\n"
+                
+                f"Your task:\n"
+                f"1. Determine if there are records for lunch and/or dinner.\n"
+                f"2. For each meal, determine:\n"
+                f"   - if a BEFORE-meal record (Gross) exists\n"
+                f"   - if an AFTER-meal record (Leftover/Net) exists\n\n"
+                
+                f"IMPORTANT RULES:\n"
+                f"- DO NOT mention any numbers, grams, or milliliters.\n"
+                f"- DO NOT describe food items.\n"
+                f"- ONLY describe presence or absence of records.\n"
+                f"- Output must follow the style of the examples below.\n"
+                f"- Maximum 2 sentences.\n\n"
+                
+                f"Examples:\n"
+                f"- No records at all → 'The patient does not have any intake records for today.'\n"
+                f"- Only before lunch → 'The patient has before lunch intake record only. No after lunch intake record and no dinner records found.'\n"
+                f"- Before + after lunch only → 'The patient has before and after lunch intake records but has no dinner intake records yet.'\n"
+                f"- Lunch + dinner partial → 'The patient has complete lunch intake records and partial dinner intake records.'\n\n"
+                
+                f"Now generate the answer:"
+            )
+
+            # Pass context to LLM
+            response = ask_llm(prompt)
+
+            return Response(
+                {
+                    "response": response,
+                    "final_prompt": prompt,
+                    "food_intake_chunks": food_intake_context,
+                    "date": curdate
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return Response(
+                {
+                    "detail": "Error generating response", 
+                    "error": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 

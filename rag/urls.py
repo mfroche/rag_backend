@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CombinedRAGView, HpaDocsRetrievalRagQueryView, PatientDocsRagQueryView, PatientDocsEnglishRagQueryView, PatientFoodIntakeSummaryView, Receive5090PayloadView, Receive5090PayloadChineseDocsView
+from .views import CombinedRAGView, FoodIntakeSummaryView, HpaDocsRetrievalRagQueryView, PatientDocsRagQueryView, PatientDocsEnglishRagQueryView, PatientFoodIntakeSummaryByDateView, PatientFoodIntakeSummaryView, Receive5090PayloadView, Receive5090PayloadChineseDocsView
 
 # BASE ENDPOINT: /api/z
 
@@ -23,6 +23,14 @@ urlpatterns = [
     # Patient Daily food intake summary
     path("patient/<int:pk>/meal-intake", PatientFoodIntakeSummaryView.as_view()),
     path("patient/<int:pk>/meal-intake/", PatientFoodIntakeSummaryView.as_view()),
+
+    # Test URL for patient food intake summary without numerical values
+    path("patient/<int:pk>/meal-intake/test", FoodIntakeSummaryView.as_view()),
+
+     # Update these lines to include the date parameter
+    path("patient/<int:pk>/meal-intake/<str:date>", PatientFoodIntakeSummaryByDateView.as_view()),
+    path("patient/<int:pk>/meal-intake/<str:date>/", PatientFoodIntakeSummaryByDateView.as_view()),
+
 
     # --- OUR NEW 5090 INGESTION WEBHOOK ---
     path("ingest-5090/", Receive5090PayloadView.as_view()),

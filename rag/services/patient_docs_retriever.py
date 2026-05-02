@@ -152,24 +152,25 @@ def get_patient_dietary_targets(pid):
 
 def get_patient_food_intake(pid, dts, limit_per_scroll=10):
     COLLECTION_NAME = "ltc_semantic_graph_2"
+
     all_results = []
+    offset = None
 
-    # Initial scroll
-    scroll_result, _ = qd_client.scroll(
-        collection_name=COLLECTION_NAME,
-        scroll_filter=bd_flt(pid, dts),
-        limit=limit_per_scroll
-    )
-    all_results.extend(scroll_result)
-
-    # Keep scrolling until no more results
-    while len(scroll_result) == limit_per_scroll:
-        scroll_result, _ = qd_client.scroll(
+    while True:
+        scroll_result, next_offset = qd_client.scroll(
             collection_name=COLLECTION_NAME,
             scroll_filter=bd_flt(pid, dts),
-            limit=limit_per_scroll
+            limit=limit_per_scroll,
+            offset=offset,
         )
+
         all_results.extend(scroll_result)
+
+        # ✅ stop condition
+        if next_offset is None:
+            break
+
+        offset = next_offset
 
     return [
         (point.payload.get("page_content"), point.payload.get("metadata"))
@@ -179,30 +180,30 @@ def get_patient_food_intake(pid, dts, limit_per_scroll=10):
 
 def get_patient_segmented_intake(pid, dts, limit_per_scroll=10):
     COLLECTION_NAME = "ltc_semantic_graph_2"
+
     all_results = []
+    offset = None
 
-    # Initial scroll
-    scroll_result, _ = qd_client.scroll(
-        collection_name=COLLECTION_NAME,
-        scroll_filter=si_flt(pid, dts),
-        limit=limit_per_scroll
-    )
-    all_results.extend(scroll_result)
-
-    # Keep scrolling until no more results
-    while len(scroll_result) == limit_per_scroll:
-        scroll_result, _ = qd_client.scroll(
+    while True:
+        scroll_result, next_offset = qd_client.scroll(
             collection_name=COLLECTION_NAME,
             scroll_filter=si_flt(pid, dts),
-            limit=limit_per_scroll
+            limit=limit_per_scroll,
+            offset=offset,
         )
+
         all_results.extend(scroll_result)
+
+        # stop condition
+        if next_offset is None:
+            break
+
+        offset = next_offset
 
     return [
         (point.payload.get("page_content"), point.payload.get("metadata"))
         for point in all_results
     ]
-
 
 # === Filters ===
 def flt(pid):
