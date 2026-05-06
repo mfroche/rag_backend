@@ -141,8 +141,9 @@ def get_meals_by_nutrients_with_ingredients(nutrient_names: list):
 # meals = get_meals_by_nutrients_with_ingredients(["Fat", "Fats"])
 # meals = get_meals_by_nutrients_with_ingredients(["Carbohydrate"])
 # meals = get_meals_by_nutrients_with_ingredients(["Protein"])
-meals = get_meals_by_nutrients_with_ingredients(["Total Fiber", "Fiber"])
-print("Meals by nutrients with ingredients\n", meals)
+# meals = get_meals_by_nutrients_with_ingredients(["Total Fiber", "Fiber", "Protein"])
+# meals = get_meals_by_nutrients_with_ingredients(["Total Fiber", "Fiber", "Protein", "Carbohydrate"])
+# print("Meals by nutrients with ingredients\n", meals)
 
 
 

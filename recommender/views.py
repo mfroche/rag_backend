@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import requests
 
+from mysql_test import get_meals_by_nutrients_with_ingredients
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -19,7 +20,7 @@ from rag.services.patient_docs_retriever import format_food_intakes_docs, get_pa
 from rag.services.generator import ask_llm #ask_groq_llm_with_token_limit, ask_ollama_llm, 
 
 # Recommender Services
-from recommender.services import calculate_food_item_intake, create_monthly_food_intake_context, format_calculated_intakes, format_calculated_intakes_for_response, get_dates_in_current_month, get_dri_min_max, get_food_intake_results_in_curmonth, get_list_of_meals, get_monthly_meal_recommendations, get_nutrition_remarks, get_nutritional_content_in_json, get_patient_info, get_daily_meal_recommendations, get_weekly_meal_recommendations
+from recommender.services import calculate_food_item_intake, create_monthly_food_intake_context, format_calculated_intakes, format_calculated_intakes_for_response, get_dates_in_current_month, get_dri_min_max, get_food_intake_results_in_curmonth, get_list_of_meals, get_meals_excluding_nutrients_with_ingredients, get_monthly_meal_recommendations, get_nutrition_remarks, get_nutritional_content_in_json, get_patient_info, get_daily_meal_recommendations, get_weekly_meal_recommendations
 
 # Qdrant Services
 from qdrant_client.models import PointStruct, Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
@@ -242,8 +243,68 @@ class DailyRecommendationsByPatientAndDateView(APIView):
                 "carbohydrates_g": get_nutrition_remarks(patient_dris, total_nutri_content, nutrient="carbohydrates_g"),
                 "fiber_g": get_nutrition_remarks(patient_dris, total_nutri_content, nutrient="fiber_g"),
                 "calories_kcal": get_nutrition_remarks(patient_dris, total_nutri_content, nutrient="calories_kcal"),
-            }        
+            } 
 
+
+            # =======================================================
+            # SQL Query food_intakes_db based on nutritional remarks
+            # =======================================================
+            no_or_below_recommended_intake = []
+            above_recommended_intake = []
+
+            for nutrient, remark in nutrition_remarks.items():
+                if remark == "No intake" or remark == "Below recommended":
+                    no_or_below_recommended_intake.append(nutrient)
+                elif remark == "Above recommended":
+                    above_recommended_intake.append(nutrient)
+
+            # SQL nutrients mapping
+            nutrient_name_mapping = {
+                "protein_g": ["Protein"],
+                "fats_g": ["Fat", "Fats"],
+                "carbohydrates_g": ["Carbohydrate"],
+                "fiber_g": ["Total Fiber"],
+            }
+
+            # SQL-based meal retrieval
+            meals_for_no_or_below = {
+                "protein_g": [],
+                "fats_g": [],
+                "carbohydrates_g": [],
+                "fiber_g": []
+            }
+
+            meals_for_above = {
+                "protein_g": [],
+                "fats_g": [],
+                "carbohydrates_g": [],
+                "fiber_g": []
+            }
+
+            # ---- NO OR BELOW RECOMMENDED INTAKE-> meals WITH nutrient ----
+            for nutrient in no_or_below_recommended_intake:
+                db_nutrients = nutrient_name_mapping.get(nutrient, [])
+                if db_nutrients:
+                    meals = get_meals_by_nutrients_with_ingredients(db_nutrients)
+                    meals_for_no_or_below[nutrient].extend(meals)
+
+            # ---- ABOVE RECOMMENDED INTAKE-> meals WITHOUT nutrient ----
+            for nutrient in above_recommended_intake:
+                db_nutrients = nutrient_name_mapping.get(nutrient, [])
+                if db_nutrients:
+                    meals = get_meals_excluding_nutrients_with_ingredients(db_nutrients)
+                    meals_for_above[nutrient].extend(meals)
+
+            # Remove empty meal lists 
+            meals_for_no_or_below = {
+                k: v for k, v in meals_for_no_or_below.items() if v
+            }
+
+            meals_for_above = {
+                k: v for k, v in meals_for_above.items() if v
+            }
+
+                   
             # 3. DUAL RAG: HPA DOCS RETRIEVAL & LLM GENERATION
             age = patient.get("age")
             sex = patient.get("sex")
@@ -263,10 +324,10 @@ class DailyRecommendationsByPatientAndDateView(APIView):
             query_4_results = retrieve_all(f"{descriptor}的每日熱量(Calories)攝取建議與需求", top_k=3)
             query_5_results = retrieve_all(f"{descriptor}的每日膳食纖維(Fiber)攝取建議與需求", top_k=3)
 
-            meal_names = get_list_of_meals() #meal_names_list 
-            meals_text = ", ".join(meal_names)
+            # meal_names = get_list_of_meals() #meal_names_list 
+            # meals_text = ", ".join(meal_names)
             
-            food_intake_context = "\n".join([doc['document'] for doc in food_intake_docs])
+            # food_intake_context = "\n".join([doc['document'] for doc in food_intake_docs])
 
             # TRUE DUAL RAG PROMPT
             prompt = f"""
@@ -287,7 +348,8 @@ Calories: {build_rag_context(query_4_results)}
 Fiber: {build_rag_context(query_5_results)}
 
 Available Meals:
-{meals_text}
+Meals for No or Below Recommended Intake: {meals_for_no_or_below}
+Meals for Above Recommended Intake: {meals_for_above}
 
 TASK:
 You MUST format your response EXACTLY according to the following structure. Do not deviate. Answer in English.
@@ -328,6 +390,8 @@ Rules:
                 "dinner_nutritional_content": dinner_nutri_content,
                 "total_nutritional_content": total_nutri_content,
                 "daily_nutrition_remarks": nutrition_remarks,
+                "meals_for_no_or_below": meals_for_no_or_below,
+                "meals_for_above": meals_for_above, 
                 "prompt": prompt,
             }
             
