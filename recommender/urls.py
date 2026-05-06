@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DailyRecommendationsByDummyPatientView, DailyRecommendationsByPatientAndDateView, DailyRecommendationsByPatientView, MonthlyRecommendationsByDummyPatientView, MonthlyRecommendationsByPatientView, PatientFoodIntakeRecommenderByDateView, DailyPatientFoodIntakeRecommenderView, WeeklyPatientFoodIntakeRecommenderView, MonthlyPatientFoodIntakeRecommenderView, GeneralPatientFoodIntakeRecommenderView, WeeklyRecommendationsByDummyPatientView, WeeklyRecommendationsByPatientView
+from .views import DailyRecommendationsByDummyPatientView, DailyRecommendationsByPatientAndDateView, DailyRecommendationsByPatientView, MealNamesView, MonthlyRecommendationsByDummyPatientView, MonthlyRecommendationsByPatientView, PatientFoodIntakeRecommenderByDateView, DailyPatientFoodIntakeRecommenderView, WeeklyPatientFoodIntakeRecommenderView, MonthlyPatientFoodIntakeRecommenderView, GeneralPatientFoodIntakeRecommenderView, WeeklyRecommendationsByDummyPatientView, WeeklyRecommendationsByPatientView
 
 # BASE ENDPOINT: /api/recommend/
 
@@ -49,6 +49,8 @@ urlpatterns = [
     # Patient Monthly food intake recommendations
     path("patient/<int:pk>/monthly", MonthlyPatientFoodIntakeRecommenderView.as_view()),
     path("patient/<int:pk>/monthly/", MonthlyPatientFoodIntakeRecommenderView.as_view()),
+
     
+    path("meals/", MealNamesView.as_view()),
 ]
 

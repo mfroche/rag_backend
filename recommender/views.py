@@ -53,7 +53,27 @@ class GeneralPatientFoodIntakeRecommenderView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-            
+
+class MealNamesView(APIView):    
+    def get(self, request):
+        try:
+            meal_names_list = get_list_of_meals()
+            return Response(
+                {
+                    "meal_names_list": meal_names_list,
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "detail": "Error generating response", 
+                    "error": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 class DailyRecommendationsByPatientView(APIView):    
     def get(self, request, pk):
         try:
@@ -124,7 +144,7 @@ class DailyRecommendationsByPatientView(APIView):
 
             # 3. CREATE PROMPT & GENERATE RESPONSE WITH LLM; To give meal recommendations based on remarks
             # a. Get meals from database
-            meal_names = meal_names_list 
+            meal_names = get_list_of_meals() #meal_names_list  
 
             # b. Get meal recommendations
             meal_recommendations = get_daily_meal_recommendations(meal_names, nutrition_remarks)
@@ -243,7 +263,7 @@ class DailyRecommendationsByPatientAndDateView(APIView):
             query_4_results = retrieve_all(f"{descriptor}的每日熱量(Calories)攝取建議與需求", top_k=3)
             query_5_results = retrieve_all(f"{descriptor}的每日膳食纖維(Fiber)攝取建議與需求", top_k=3)
 
-            meal_names = meal_names_list #get_list_of_meals()
+            meal_names = get_list_of_meals() #meal_names_list 
             meals_text = ", ".join(meal_names)
             
             food_intake_context = "\n".join([doc['document'] for doc in food_intake_docs])
@@ -380,7 +400,7 @@ Rules:
 #             }        
 
 #             # 3. CREATE PROMPT & GENERATE RESPONSE WITH LLM
-#             meal_names = meal_names_list 
+#             meal_names = get_list_of_meals() #meal_names_list  
 #             meal_recommendations = get_daily_meal_recommendations(meal_names, nutrition_remarks)
 
 #             # 4. SEND RESPONSE
@@ -992,7 +1012,7 @@ class DailyRecommendationsByDummyPatientView(APIView):
 
             # 3. CREATE PROMPT & GENERATE RESPONSE WITH LLM; To give meal recommendations based on remarks
             # a. Get meals from database
-            meal_names = meal_names_list
+            meal_names = get_list_of_meals() #meal_names_list 
 
             # b. Get meal recommendations
             meal_recommendations = get_daily_meal_recommendations(meal_names, nutrition_remarks)

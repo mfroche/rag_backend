@@ -1,0 +1,50 @@
+[
+    {
+        "id": 1,
+        "name": "Carbohydrate"
+    },
+    {
+        "id": 9,
+        "name": "Dietary Cholesterol"
+    },
+    {
+        "id": 4,
+        "name": "Fat"
+    },
+    {
+        "id": 11,
+        "name": "Fats"
+    },
+    {
+        "id": 8,
+        "name": "Linoleic Acid"
+    },
+    {
+        "id": 3,
+        "name": "Protein"
+    },
+    {
+        "id": 5,
+        "name": "Saturated fatty acids"
+    },
+    {
+        "id": 2,
+        "name": "Total Fiber"
+    },
+    {
+        "id": 10,
+        "name": "Total Water"
+    },
+    {
+        "id": 6,
+        "name": "Trans fatty acids"
+    },
+    {
+        "id": 12,
+        "name": "Water"
+    },
+    {
+        "id": 7,
+        "name": "α-Linolenic Acid"
+    }
+]

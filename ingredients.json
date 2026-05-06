@@ -1,0 +1,1556 @@
+[
+    {
+        "id": 1,
+        "name": "豬肉",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 2,
+        "name": "醬油",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 3,
+        "name": "糖",
+        "food_group": 7,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 4,
+        "name": "大蒜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 5,
+        "name": "薑",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 6,
+        "name": "蔥",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 7,
+        "name": "米酒",
+        "food_group": 7,
+        "nutrients": [
+            1,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 8,
+        "name": "五香粉",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 9,
+        "name": "八角",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 10,
+        "name": "胡椒粉",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 11,
+        "name": "油",
+        "food_group": 7,
+        "nutrients": [
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 12,
+        "name": "鹽",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 13,
+        "name": "馬鈴薯",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 14,
+        "name": "麵",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            2
+        ],
+        "image": null
+    },
+    {
+        "id": 15,
+        "name": "蒜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 16,
+        "name": "蒜醬",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 17,
+        "name": "香腸",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 18,
+        "name": "包心菜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 19,
+        "name": "青椒",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 20,
+        "name": "紅椒",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 21,
+        "name": "胡蘿蔔",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 22,
+        "name": "洋蔥",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 23,
+        "name": "蒜頭",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 24,
+        "name": "木耳",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 25,
+        "name": "香菇",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 26,
+        "name": "青蔥",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 27,
+        "name": "豆芽",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 28,
+        "name": "食用油",
+        "food_group": 7,
+        "nutrients": [
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 29,
+        "name": "竹筍",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 30,
+        "name": "豆皮",
+        "food_group": 2,
+        "nutrients": [
+            1,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 31,
+        "name": "豆枝",
+        "food_group": 2,
+        "nutrients": [
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 32,
+        "name": "乾香菇",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 33,
+        "name": "素肉臊滷汁",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 34,
+        "name": "香油",
+        "food_group": 7,
+        "nutrients": [
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 35,
+        "name": "四季豆",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 36,
+        "name": "菇",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 37,
+        "name": "高麗菜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 38,
+        "name": "豬肉排",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 39,
+        "name": "水",
+        "food_group": 7,
+        "nutrients": [
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 40,
+        "name": "豬排",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 41,
+        "name": "植物油",
+        "food_group": 7,
+        "nutrients": [
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 42,
+        "name": "肉桂",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 43,
+        "name": "花椒",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 44,
+        "name": "沙茶",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 45,
+        "name": "玉米",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 46,
+        "name": "肉末",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 47,
+        "name": "沙茶醬",
+        "food_group": 7,
+        "nutrients": [
+            1,
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 48,
+        "name": "雞肉",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 49,
+        "name": "番茄",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 50,
+        "name": "椰奶",
+        "food_group": 7,
+        "nutrients": [
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 51,
+        "name": "咖哩粉",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 52,
+        "name": "薑黃",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 53,
+        "name": "孜然",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 54,
+        "name": "芫荽子",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 55,
+        "name": "辣椒",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 56,
+        "name": "牛肉",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 57,
+        "name": "小麥粉",
+        "food_group": 1,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 58,
+        "name": "牛油",
+        "food_group": 5,
+        "nutrients": [
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 59,
+        "name": "生薑",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 60,
+        "name": "香菜",
+        "food_group": 7,
+        "nutrients": [
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 61,
+        "name": "魚露",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 62,
+        "name": "油干魚",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 63,
+        "name": "青江菜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 64,
+        "name": "紅蘿蔔",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 65,
+        "name": "紫菜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 66,
+        "name": "雞蛋",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 67,
+        "name": "白胡椒粉",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 68,
+        "name": "烏龍麵",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 69,
+        "name": "雞胸肉",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 70,
+        "name": "蝦仁",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 71,
+        "name": "火腿",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 72,
+        "name": "芝麻",
+        "food_group": 6,
+        "nutrients": [
+            2,
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 73,
+        "name": "蠔油",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 74,
+        "name": "麻油",
+        "food_group": 7,
+        "nutrients": [
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 75,
+        "name": "大白菜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 76,
+        "name": "米",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            2,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 77,
+        "name": "芋頭",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 78,
+        "name": "蛋黃",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 79,
+        "name": "麵粉",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 80,
+        "name": "奶油",
+        "food_group": 5,
+        "nutrients": [
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 81,
+        "name": "蘿蔔",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 82,
+        "name": "黃椒",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 83,
+        "name": "味噌",
+        "food_group": 7,
+        "nutrients": [
+            1,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 84,
+        "name": "砂糖",
+        "food_group": 7,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 85,
+        "name": "料理酒",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 86,
+        "name": "麵包粉",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 87,
+        "name": "冬粉",
+        "food_group": 1,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 88,
+        "name": "海帶根",
+        "food_group": 3,
+        "nutrients": [
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 89,
+        "name": "玉米粒",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 90,
+        "name": "雞湯",
+        "food_group": 2,
+        "nutrients": [
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 91,
+        "name": "蔥花",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 92,
+        "name": "豬柳",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 93,
+        "name": "鮮奶",
+        "food_group": 5,
+        "nutrients": [
+            1,
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 94,
+        "name": "甜椒",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 95,
+        "name": "海帶芽",
+        "food_group": 3,
+        "nutrients": [
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 96,
+        "name": "銀斑魚",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 97,
+        "name": "豆腐皮",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 98,
+        "name": "花生",
+        "food_group": 6,
+        "nutrients": [
+            1,
+            2,
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 99,
+        "name": "蘑菇",
+        "food_group": 3,
+        "nutrients": [
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 100,
+        "name": "雞腿",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 101,
+        "name": "魚肉",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 102,
+        "name": "百頁豆腐",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 103,
+        "name": "芝麻油",
+        "food_group": 7,
+        "nutrients": [
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 104,
+        "name": "豬絞肉",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 105,
+        "name": "馬蹄",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 106,
+        "name": "紹興酒",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 107,
+        "name": "太白粉",
+        "food_group": 7,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 108,
+        "name": "白蘿蔔",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 109,
+        "name": "牛奶",
+        "food_group": 5,
+        "nutrients": [
+            1,
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 110,
+        "name": "雞高湯",
+        "food_group": 7,
+        "nutrients": [
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 111,
+        "name": "冰糖",
+        "food_group": 7,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 112,
+        "name": "海苔",
+        "food_group": 3,
+        "nutrients": [
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 113,
+        "name": "豆干",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 114,
+        "name": "醋",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 115,
+        "name": "冬菜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 116,
+        "name": "米粉",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 117,
+        "name": "乾蝦",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 118,
+        "name": "豆芽菜",
+        "food_group": 3,
+        "nutrients": [
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 119,
+        "name": "筍絲",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 120,
+        "name": "白米",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 121,
+        "name": "皮蛋",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 122,
+        "name": "乾麵包粉",
+        "food_group": 1,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 123,
+        "name": "蘋果",
+        "food_group": 4,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 124,
+        "name": "番茄醬",
+        "food_group": 7,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 125,
+        "name": "伍斯特醬",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 126,
+        "name": "麵筋",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 127,
+        "name": "豆腐",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 128,
+        "name": "麵條",
+        "food_group": 1,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 129,
+        "name": "絲瓜",
+        "food_group": 3,
+        "nutrients": [
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 130,
+        "name": "玉米筍",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 131,
+        "name": "豬油",
+        "food_group": 7,
+        "nutrients": [
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 132,
+        "name": "紅蔥頭",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 133,
+        "name": "絞肉",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 134,
+        "name": "里肌肉",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 135,
+        "name": "九層塔",
+        "food_group": 3,
+        "nutrients": [
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 136,
+        "name": "甜不辣",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 137,
+        "name": "小白菜",
+        "food_group": 3,
+        "nutrients": [
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 138,
+        "name": "胡椒粒",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 139,
+        "name": "豆輪",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 140,
+        "name": "蛋",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 141,
+        "name": "蝦",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 142,
+        "name": "高湯",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 143,
+        "name": "筍",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 144,
+        "name": "胡椒",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 145,
+        "name": "金針菇",
+        "food_group": 3,
+        "nutrients": [
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 146,
+        "name": "豬腿排",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 147,
+        "name": "鳳梨",
+        "food_group": 4,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 148,
+        "name": "苦瓜",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 149,
+        "name": "料酒",
+        "food_group": 7,
+        "nutrients": [],
+        "image": null
+    },
+    {
+        "id": 150,
+        "name": "玉米粉",
+        "food_group": 1,
+        "nutrients": [
+            1
+        ],
+        "image": null
+    },
+    {
+        "id": 151,
+        "name": "海帶結",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 152,
+        "name": "薑片",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 153,
+        "name": "青豆",
+        "food_group": 3,
+        "nutrients": [
+            1,
+            2,
+            3,
+            12
+        ],
+        "image": null
+    },
+    {
+        "id": 154,
+        "name": "糯米",
+        "food_group": 1,
+        "nutrients": [
+            1,
+            3
+        ],
+        "image": null
+    },
+    {
+        "id": 155,
+        "name": "蝦米",
+        "food_group": 2,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 156,
+        "name": "花生粉",
+        "food_group": 6,
+        "nutrients": [
+            3,
+            11
+        ],
+        "image": null
+    },
+    {
+        "id": 157,
+        "name": "檸檬汁",
+        "food_group": 7,
+        "nutrients": [
+            12
+        ],
+        "image": null
+    }
+]
