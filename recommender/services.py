@@ -276,7 +276,7 @@ def get_list_of_meals():
         print("Error:", e)
         return []
 
-
+# Get meals that contain specific nutrients along with their ingredients that contain that nutrient.
 def get_meals_by_nutrients_with_ingredients(nutrient_names: list):
     try:
         engine = create_engine(
@@ -322,8 +322,8 @@ def get_meals_by_nutrients_with_ingredients(nutrient_names: list):
         print("Error:", e)
         return []
     
-    
 
+# Get meals that do NOT contain specific nutrients along with their ingredients.
 def get_meals_excluding_nutrients_with_ingredients(nutrient_names: list):
     try:
         engine = create_engine(

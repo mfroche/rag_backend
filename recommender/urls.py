@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DailyRecommendationsByDummyPatientView, DailyRecommendationsByPatientAndDateView, DailyRecommendationsByPatientView, MealNamesView, MonthlyRecommendationsByDummyPatientView, MonthlyRecommendationsByPatientView, PatientFoodIntakeRecommenderByDateView, DailyPatientFoodIntakeRecommenderView, WeeklyPatientFoodIntakeRecommenderView, MonthlyPatientFoodIntakeRecommenderView, GeneralPatientFoodIntakeRecommenderView, WeeklyRecommendationsByDummyPatientView, WeeklyRecommendationsByPatientView
+from .views import DailyRecommendationsByPatientAndDateView, DailyRecommendationsByPatientView, DailyRecommendationsView, MealNamesView, MonthlyRecommendationsByPatientView, PatientFoodIntakeRecommenderByDateView, DailyPatientFoodIntakeRecommenderView, WeeklyPatientFoodIntakeRecommenderView, MonthlyPatientFoodIntakeRecommenderView, GeneralPatientFoodIntakeRecommenderView, WeeklyRecommendationsByPatientView
 
 # BASE ENDPOINT: /api/recommend/
 
@@ -23,17 +23,12 @@ urlpatterns = [
     path("nutri-and-food/patient/<int:pk>/monthly/", MonthlyRecommendationsByPatientView.as_view()),
 
 
+    # [TEST]
+    path("test/patient/<int:pk>/daily/<str:date>/", DailyRecommendationsView.as_view()),
+    path("test/patient/<int:pk>/daily/<str:date>", DailyRecommendationsView.as_view()),
+
+
     # [PREVIOUS]
-    path("nutri-and-food/patient/dummy/daily", DailyRecommendationsByDummyPatientView.as_view()),
-    path("nutri-and-food/patient/dummy/daily/", DailyRecommendationsByDummyPatientView.as_view()),
-
-    path("nutri-and-food/patient/dummy/weekly", WeeklyRecommendationsByDummyPatientView.as_view()),
-    path("nutri-and-food/patient/dummy/weekly/", WeeklyRecommendationsByDummyPatientView.as_view()),
-
-    path("nutri-and-food/patient/dummy/monthly", MonthlyRecommendationsByDummyPatientView.as_view()),
-    path("nutri-and-food/patient/dummy/monthly/", MonthlyRecommendationsByDummyPatientView.as_view()),
-
-    
     # Patient Daily food intake recommendations
     path("patient/<int:pk>/daily", DailyPatientFoodIntakeRecommenderView.as_view()),
     path("patient/<int:pk>/daily/", DailyPatientFoodIntakeRecommenderView.as_view()),
@@ -50,7 +45,7 @@ urlpatterns = [
     path("patient/<int:pk>/monthly", MonthlyPatientFoodIntakeRecommenderView.as_view()),
     path("patient/<int:pk>/monthly/", MonthlyPatientFoodIntakeRecommenderView.as_view()),
 
-    
+
     path("meals/", MealNamesView.as_view()),
 ]
 
